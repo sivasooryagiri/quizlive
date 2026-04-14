@@ -16,7 +16,7 @@ export default function QuestionPhase({
   questionIndex,
   totalQuestions,
 }) {
-  const [timeLeft,     setTimeLeft]     = useState(question.timer ?? 30);
+  const [timeLeft,     setTimeLeft]     = useState(question.timer ?? 15);
   const [answerCount,  setAnswerCount]  = useState(0);
 
   // Live answer counter
@@ -30,7 +30,7 @@ export default function QuestionPhase({
   // Countdown from Firestore timestamp
   useEffect(() => {
     if (!gameState?.questionStartTime) return;
-    setTimeLeft(question.timer ?? 30);
+    setTimeLeft(question.timer ?? 15);
 
     const startMs =
       gameState.questionStartTime?.toMillis?.() ??
@@ -38,7 +38,7 @@ export default function QuestionPhase({
 
     const tick = () => {
       const elapsed   = (Date.now() - startMs) / 1000;
-      const remaining = Math.max(0, (question.timer ?? 30) - elapsed);
+      const remaining = Math.max(0, (question.timer ?? 15) - elapsed);
       setTimeLeft(remaining);
     };
 
@@ -69,7 +69,7 @@ export default function QuestionPhase({
         </motion.div>
 
         {/* Timer */}
-        <Timer timeLeft={timeLeft} totalTime={question.timer ?? 30} size={110} />
+        <Timer timeLeft={timeLeft} totalTime={question.timer ?? 15} size={110} />
       </div>
 
       {/* Question text */}

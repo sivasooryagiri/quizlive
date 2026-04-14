@@ -50,7 +50,7 @@ export default function HostPage() {
       (gameState.questionStartTime?.seconds ?? 0) * 1000;
 
     const elapsed   = (Date.now() - startMs) / 1000;
-    const remaining = Math.max(0, (currentQ.timer ?? 30) - elapsed);
+    const remaining = Math.max(0, (currentQ.timer ?? 15) - elapsed);
 
     timerRef.current = setTimeout(() => {
       advanceToResults().catch(console.error);
