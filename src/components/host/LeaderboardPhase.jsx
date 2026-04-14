@@ -3,85 +3,95 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Particles from '../shared/Particles';
 import { subscribeToPlayers } from '../../firebase/db';
 
-const PODIUM_CONFIG = [
-  // visual order: 2nd, 1st, 3rd
+// Tie-aware rank (players sorted desc by score already)
+const getRank = (players, score) =>
+  players.filter((p) => p.score > score).length + 1;
+
+const PODIUM_ORDER = [1, 0, 2]; // visual order: 2nd, 1st, 3rd
+
+const PODIUM_STYLES = [
   {
-    rankIdx: 1,
-    height: 'h-36',
-    gradient: 'from-slate-400 to-slate-500',
-    glow: 'shadow-slate-400/40',
-    medal: '🥈',
-    label: '2nd',
+    height:   'h-40',
+    gradient: 'from-slate-300 to-slate-400',
+    shadow:   'shadow-slate-300/30',
+    ring:     'ring-slate-300/40',
+    medal:    '🥈',
     textSize: 'text-base',
   },
   {
-    rankIdx: 0,
-    height: 'h-52',
-    gradient: 'from-yellow-400 via-amber-400 to-yellow-500',
-    glow: 'shadow-yellow-400/60',
-    medal: '🥇',
-    label: '1st',
+    height:   'h-56',
+    gradient: 'from-yellow-300 via-amber-400 to-yellow-500',
+    shadow:   'shadow-yellow-400/60',
+    ring:     'ring-yellow-300/60',
+    medal:    '🥇',
     textSize: 'text-lg',
     isWinner: true,
   },
   {
-    rankIdx: 2,
-    height: 'h-28',
-    gradient: 'from-amber-600 to-orange-700',
-    glow: 'shadow-orange-500/40',
-    medal: '🥉',
-    label: '3rd',
+    height:   'h-32',
+    gradient: 'from-amber-600 to-orange-600',
+    shadow:   'shadow-orange-500/30',
+    ring:     'ring-orange-400/40',
+    medal:    '🥉',
     textSize: 'text-sm',
   },
 ];
 
-function PodiumCard({ player, config, delay }) {
+function PodiumSlot({ player, style, delay }) {
   if (!player) return <div className="w-40" />;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 80 }}
+      initial={{ opacity: 0, y: 100 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, type: 'spring', stiffness: 120, damping: 14 }}
+      transition={{ delay, type: 'spring', stiffness: 100, damping: 16 }}
       className="flex flex-col items-center gap-2"
     >
-      {/* Crown for winner */}
-      {config.isWinner && (
-        <motion.div
-          animate={{ y: [0, -6, 0], rotate: [-5, 5, -5] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="text-4xl"
-        >
-          👑
-        </motion.div>
+      {/* Crown + glow for winner */}
+      {style.isWinner && (
+        <>
+          <motion.span
+            animate={{ y: [0, -8, 0], rotate: [-6, 6, -6] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+            className="text-4xl"
+          >
+            👑
+          </motion.span>
+          {/* Glow pulse behind avatar */}
+          <motion.div
+            animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0.8, 0.4] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="absolute w-20 h-20 rounded-full bg-yellow-400/30 blur-xl pointer-events-none"
+          />
+        </>
       )}
 
-      {/* Avatar circle */}
+      {/* Avatar */}
       <motion.div
-        animate={config.isWinner ? { boxShadow: [
-          '0 0 20px rgba(250,204,21,0.4)',
-          '0 0 50px rgba(250,204,21,0.8)',
-          '0 0 20px rgba(250,204,21,0.4)',
-        ]} : {}}
-        transition={{ duration: 1.8, repeat: Infinity }}
-        className={`w-14 h-14 rounded-full bg-gradient-to-br ${config.gradient}
+        animate={
+          style.isWinner
+            ? { boxShadow: ['0 0 0px rgba(250,204,21,0)', '0 0 30px rgba(250,204,21,0.7)', '0 0 0px rgba(250,204,21,0)'] }
+            : {}
+        }
+        transition={{ duration: 2, repeat: Infinity }}
+        className={`relative w-14 h-14 rounded-full bg-gradient-to-br ${style.gradient}
                     flex items-center justify-center text-xl font-black text-white
-                    shadow-xl ${config.glow}`}
+                    ring-2 ${style.ring} shadow-xl ${style.shadow}`}
       >
         {player.name.charAt(0).toUpperCase()}
       </motion.div>
 
       {/* Podium block */}
       <div
-        className={`w-36 ${config.height} bg-gradient-to-t ${config.gradient}
+        className={`w-40 ${style.height} bg-gradient-to-t ${style.gradient}
                     rounded-t-2xl flex flex-col items-center justify-end pb-4
-                    shadow-xl ${config.glow} shadow-lg`}
+                    shadow-xl ${style.shadow}`}
       >
-        <span className="text-2xl mb-1">{config.medal}</span>
-        <p className={`text-white font-black ${config.textSize} text-center px-2 w-full truncate`}>
+        <span className="text-2xl mb-1">{style.medal}</span>
+        <p className={`text-white font-black ${style.textSize} text-center px-2 w-full truncate`}>
           {player.name}
         </p>
-        <p className="text-white/70 font-bold text-xs mt-0.5">{player.score} pts</p>
+        <p className="text-white/70 text-xs font-bold mt-0.5">{player.score} pts</p>
       </div>
     </motion.div>
   );
@@ -95,34 +105,41 @@ export default function LeaderboardPhase({ gameState, questions }) {
     return unsub;
   }, []);
 
-  const topTen  = players.slice(0, 10);
-  const isLast  = (gameState?.currentQuestionIndex ?? 0) >= (questions.length - 1);
+  const topTen = players.slice(0, 10);
+  const isLast = (gameState?.currentQuestionIndex ?? 0) >= (questions.length - 1);
+
+  // Attach display rank to each player (tie-aware)
+  const ranked = topTen.map((p) => ({
+    ...p,
+    displayRank: getRank(players, p.score),
+  }));
 
   return (
     <div className="min-h-screen w-full flex flex-col overflow-hidden relative
                     bg-gradient-to-b from-[#0f0a1e] via-[#160b2e] to-[#0a1628]">
 
       {/* Falling confetti */}
-      {topTen.length > 0 && <Particles count={30} />}
+      {topTen.length > 0 && <Particles count={28} />}
 
-      {/* Animated background glow */}
-      <div className="absolute inset-0 pointer-events-none">
+      {/* Background glow */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <motion.div
-          animate={{ opacity: [0.08, 0.18, 0.08] }}
+          animate={{ opacity: [0.06, 0.16, 0.06] }}
           transition={{ duration: 4, repeat: Infinity }}
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px]
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px]
                      bg-brand-600 rounded-full blur-3xl"
         />
       </div>
 
-      <div className="relative z-10 flex flex-col h-full p-6">
+      <div className="relative z-10 flex flex-col h-full p-6 gap-4">
+
         {/* Title */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-6"
+          className="text-center"
         >
-          <h1 className="text-5xl font-black gradient-text tracking-tight">
+          <h1 className="text-6xl font-black gradient-text tracking-tight leading-none">
             🏆 Leaderboard
           </h1>
           {isLast && (
@@ -130,7 +147,7 @@ export default function LeaderboardPhase({ gameState, questions }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="text-brand-300 text-lg mt-1 font-semibold"
+              className="text-brand-300 text-xl mt-2 font-semibold"
             >
               Final Results!
             </motion.p>
@@ -139,40 +156,43 @@ export default function LeaderboardPhase({ gameState, questions }) {
 
         {/* Podium — top 3 */}
         {topTen.length > 0 && (
-          <div className="flex justify-center items-end gap-3 mb-8">
-            {PODIUM_CONFIG.map((cfg, vi) => (
-              <PodiumCard
-                key={cfg.rankIdx}
-                player={topTen[cfg.rankIdx]}
-                config={cfg}
-                delay={vi * 0.15 + 0.2}
+          <div className="flex justify-center items-end gap-4 relative">
+            {PODIUM_ORDER.map((rankIdx, vi) => (
+              <PodiumSlot
+                key={rankIdx}
+                player={topTen[rankIdx]}
+                style={PODIUM_STYLES[vi]}
+                delay={0.1 + vi * 0.15}
               />
             ))}
           </div>
         )}
 
         {/* Ranks 4–10 */}
-        <div className="flex-1 overflow-hidden">
-          <div className="grid grid-cols-2 gap-2 max-w-4xl mx-auto">
+        {ranked.length > 3 && (
+          <div className="grid grid-cols-2 gap-2 max-w-4xl mx-auto w-full">
             <AnimatePresence>
-              {topTen.slice(3).map((p, i) => (
+              {ranked.slice(3).map((p, i) => (
                 <motion.div
                   key={p.id}
                   layout
-                  initial={{ opacity: 0, x: i % 2 === 0 ? -30 : 30 }}
+                  initial={{ opacity: 0, x: i % 2 === 0 ? -24 : 24 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.7 + i * 0.07, type: 'spring', stiffness: 150 }}
-                  className="flex items-center gap-3 glass rounded-xl px-4 py-3"
+                  transition={{ delay: 0.65 + i * 0.07, type: 'spring', stiffness: 160 }}
+                  className="flex items-center gap-3 glass rounded-xl px-4 py-2.5"
                 >
                   {/* Rank badge */}
-                  <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center
-                                  shrink-0">
-                    <span className="text-white/60 font-black text-sm">{i + 4}</span>
+                  <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center
+                                  justify-center shrink-0">
+                    <span className="text-white/50 font-black text-xs">
+                      {p.displayRank === i + 4 ? `#${p.displayRank}` : `#${p.displayRank}`}
+                    </span>
                   </div>
 
-                  {/* Avatar */}
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-purple-600
-                                  flex items-center justify-center text-xs font-black text-white shrink-0">
+                  {/* Mini avatar */}
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500
+                                  to-purple-600 flex items-center justify-center text-xs
+                                  font-black text-white shrink-0">
                     {p.name.charAt(0).toUpperCase()}
                   </div>
 
@@ -185,10 +205,10 @@ export default function LeaderboardPhase({ gameState, questions }) {
               ))}
             </AnimatePresence>
           </div>
-        </div>
+        )}
 
         {players.length === 0 && (
-          <p className="text-center text-white/30 mt-8 text-lg">No players yet</p>
+          <p className="text-center text-white/30 text-lg mt-4">No players yet</p>
         )}
       </div>
     </div>

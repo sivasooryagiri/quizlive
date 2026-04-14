@@ -6,11 +6,11 @@ const BLANK = {
   text:          '',
   options:       ['', '', '', ''],
   correctAnswer: 0,
-  timer:         30,
+  timer:         15,          // default 15 seconds
 };
 
 function QuestionForm({ initial = BLANK, onSave, onCancel, saving }) {
-  const [q, setQ] = useState(initial);
+  const [q, setQ] = useState({ ...BLANK, ...initial });
 
   const setOption = (i, val) => {
     const opts = [...q.options];
@@ -57,6 +57,7 @@ function QuestionForm({ initial = BLANK, onSave, onCancel, saving }) {
               <button
                 type="button"
                 onClick={() => setQ({ ...q, correctAnswer: i })}
+                title="Mark as correct"
                 className={`px-3 rounded-xl border transition-all font-bold text-sm
                   ${i === q.correctAnswer
                     ? 'bg-green-500/30 border-green-500 text-green-300'
@@ -70,35 +71,57 @@ function QuestionForm({ initial = BLANK, onSave, onCancel, saving }) {
         ))}
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
+      <div className="flex items-end gap-4">
+        <div>
           <label className="label">Timer (seconds)</label>
-          <input
-            type="number"
-            min={5}
-            max={120}
-            value={q.timer}
-            onChange={(e) => setQ({ ...q, timer: Number(e.target.value) })}
-            className="input w-24"
-          />
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={5}
+              max={120}
+              value={q.timer}
+              onChange={(e) => setQ({ ...q, timer: Number(e.target.value) })}
+              className="input w-24"
+            />
+            <span className="text-white/30 text-xs">5–120s</span>
+          </div>
         </div>
-        <div className="flex gap-2 pt-5">
-          <button
-            onClick={() => onSave(q)}
-            disabled={!valid || saving}
-            className="btn-primary"
-          >
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-          <button onClick={onCancel} className="btn-ghost">Cancel</button>
+
+        {/* Quick timer presets */}
+        <div className="flex gap-1 pb-0.5">
+          {[10, 15, 20, 30].map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setQ({ ...q, timer: t })}
+              className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all
+                ${q.timer === t
+                  ? 'bg-brand-600 text-white'
+                  : 'bg-white/10 text-white/50 hover:bg-white/20'
+                }`}
+            >
+              {t}s
+            </button>
+          ))}
         </div>
+      </div>
+
+      <div className="flex gap-2 pt-1">
+        <button
+          onClick={() => onSave(q)}
+          disabled={!valid || saving}
+          className="btn-primary"
+        >
+          {saving ? 'Saving…' : 'Save Question'}
+        </button>
+        <button onClick={onCancel} className="btn-ghost">Cancel</button>
       </div>
     </div>
   );
 }
 
 export default function QuestionEditor({ questions }) {
-  const [editing,  setEditing]  = useState(null);   // 'new' | question.id
+  const [editing,  setEditing]  = useState(null);
   const [saving,   setSaving]   = useState(false);
   const [deleting, setDeleting] = useState(null);
 
@@ -119,11 +142,8 @@ export default function QuestionEditor({ questions }) {
   const handleDelete = async (id) => {
     if (!confirm('Delete this question?')) return;
     setDeleting(id);
-    try {
-      await deleteQuestion(id);
-    } finally {
-      setDeleting(null);
-    }
+    try { await deleteQuestion(id); }
+    finally { setDeleting(null); }
   };
 
   return (
@@ -140,13 +160,13 @@ export default function QuestionEditor({ questions }) {
         </button>
       )}
 
-      {/* New question form */}
       <AnimatePresence>
         {editing === 'new' && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
           >
             <QuestionForm
               onSave={handleSave}
@@ -157,7 +177,6 @@ export default function QuestionEditor({ questions }) {
         )}
       </AnimatePresence>
 
-      {/* Question list */}
       {questions.length === 0 && (
         <p className="text-center text-white/30 py-8">No questions yet. Add one above.</p>
       )}
@@ -174,16 +193,17 @@ export default function QuestionEditor({ questions }) {
               />
             ) : (
               <div className="flex items-start gap-3">
-                <span className="glass rounded-lg w-8 h-8 flex items-center justify-center text-sm font-black text-brand-300 shrink-0">
+                <span className="glass rounded-lg w-8 h-8 flex items-center justify-center
+                                 text-sm font-black text-brand-300 shrink-0 mt-0.5">
                   {idx + 1}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-semibold">{q.text}</p>
-                  <div className="flex flex-wrap gap-2 mt-2">
+                  <p className="text-white font-semibold text-sm">{q.text}</p>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
                     {q.options.map((opt, i) => (
                       <span
                         key={i}
-                        className={`text-xs px-2 py-1 rounded-lg font-medium
+                        className={`text-xs px-2 py-0.5 rounded-lg font-medium
                           ${i === q.correctAnswer
                             ? 'bg-green-500/20 text-green-300 border border-green-500/30'
                             : 'bg-white/10 text-white/50'
@@ -193,12 +213,14 @@ export default function QuestionEditor({ questions }) {
                       </span>
                     ))}
                   </div>
-                  <p className="text-white/30 text-xs mt-1">⏱ {q.timer}s</p>
+                  <p className="text-white/30 text-xs mt-1.5">⏱ {q.timer ?? 15}s · max {
+                    Math.round(30 - 0)
+                  } pts</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <button
                     onClick={() => setEditing(q.id)}
-                    className="text-xs btn-ghost py-1 px-3"
+                    className="btn-ghost text-xs py-1 px-3"
                   >
                     Edit
                   </button>

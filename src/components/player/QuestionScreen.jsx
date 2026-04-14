@@ -1,8 +1,11 @@
 /**
- * QuestionScreen — shows question, options, live timer.
- * After answering: stays on screen with selection highlighted.
- * Player can tap another option to change answer (re-submits).
- * When timer expires: locks everything, shows "Time's up".
+ * QuestionScreen — mobile player view.
+ *
+ * - Shows question + 4 options with live countdown timer.
+ * - After answering: stays on screen, selection highlighted.
+ *   Player can tap another option to change answer (re-submits, score adjusted).
+ * - Once timer expires: all options locked, shows final state.
+ * - Phase transition (question → results) handled by PlayerPage / Firebase.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,11 +22,10 @@ export default function QuestionScreen({
   question,
   playerId,
   questionStartTime,
-  onAnswered,
 }) {
-  const totalTime    = question.timer ?? 30;
+  const totalTime    = question.timer ?? 15;
   const [timeLeft,   setTimeLeft]   = useState(totalTime);
-  const [selected,   setSelected]   = useState(null);   // current selection
+  const [selected,   setSelected]   = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [expired,    setExpired]    = useState(false);
   const [lastScore,  setLastScore]  = useState(null);
@@ -36,9 +38,9 @@ export default function QuestionScreen({
     setLastScore(null);
     setExpired(false);
     expiredRef.current = false;
-  }, [question.id]);
+  }, [question.id, totalTime]);
 
-  // Live countdown from server timestamp
+  // Live countdown synced to server timestamp
   useEffect(() => {
     if (!questionStartTime) return;
     const startMs =
@@ -56,14 +58,14 @@ export default function QuestionScreen({
     };
 
     tick();
-    const id = setInterval(tick, 100);
+    const id = setInterval(tick, 80);
     return () => clearInterval(id);
   }, [question.id, questionStartTime, totalTime]);
 
   const handleSelect = useCallback(
     async (idx) => {
       if (submitting || expired) return;
-      if (selected === idx) return; // same option, ignore
+      if (selected === idx)      return; // same option — no-op
 
       setSelected(idx);
       setSubmitting(true);
@@ -80,16 +82,17 @@ export default function QuestionScreen({
           answer:        idx,
           timeTaken,
           correctAnswer: question.correctAnswer,
+          timer:         totalTime,
         });
         setLastScore(score);
-        onAnswered(question.id);
       } catch (e) {
-        console.error(e);
+        console.error('submitAnswer failed', e);
+        setSelected(null); // roll back on error
       } finally {
         setSubmitting(false);
       }
     },
-    [submitting, expired, selected, question, playerId, questionStartTime, onAnswered]
+    [submitting, expired, selected, question, playerId, questionStartTime, totalTime]
   );
 
   const pct      = timeLeft / totalTime;
@@ -97,28 +100,31 @@ export default function QuestionScreen({
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#0f0a1e] via-[#1a0a2e] to-[#0a1628]">
-      {/* Timer bar */}
-      <div className="h-2 w-full bg-white/10">
-        <motion.div
-          className="h-full rounded-r-full transition-colors duration-300"
-          style={{ backgroundColor: barColor, width: `${pct * 100}%` }}
-          transition={{ duration: 0.1, ease: 'linear' }}
+
+      {/* Thin progress bar at top */}
+      <div className="h-1.5 w-full bg-white/10">
+        <div
+          className="h-full rounded-r-full transition-none"
+          style={{ backgroundColor: barColor, width: `${pct * 100}%`, transition: 'width 0.08s linear' }}
         />
       </div>
 
       <div className="flex-1 flex flex-col px-4 py-4 gap-3">
-        {/* Timer number + status */}
+
+        {/* Header row */}
         <div className="flex items-center justify-between">
           <span className="text-brand-300 text-sm font-semibold">
-            {selected !== null && !expired
+            {expired
+              ? (selected !== null ? '🔒 Locked in' : '⏰ Time\'s up')
+              : selected !== null
               ? '✏️ Tap to change'
-              : expired
-              ? '⏰ Time\'s up'
-              : 'Choose your answer'}
+              : 'Pick your answer'}
           </span>
+
+          {/* Timer badge — pulses red when low */}
           <motion.div
             key={Math.ceil(timeLeft)}
-            initial={{ scale: 1.2 }}
+            initial={{ scale: 1.15 }}
             animate={{ scale: 1 }}
             className="text-2xl font-black tabular-nums px-4 py-1 rounded-xl glass"
             style={{ color: barColor }}
@@ -127,47 +133,44 @@ export default function QuestionScreen({
           </motion.div>
         </div>
 
-        {/* Question */}
+        {/* Question card */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass rounded-2xl p-5 flex items-center justify-center"
-          style={{ minHeight: 100 }}
+          style={{ minHeight: 90 }}
         >
           <p className="text-white text-xl font-bold text-center leading-snug">
             {question.text}
           </p>
         </motion.div>
 
-        {/* Options */}
+        {/* Options grid */}
         <div className="grid grid-cols-2 gap-3 flex-1">
           {question.options.map((opt, idx) => {
             const s        = OPTION_STYLES[idx];
             const isChosen = selected === idx;
-            const locked   = expired;
+            const dimmed   = expired && !isChosen;
 
             return (
               <motion.button
                 key={idx}
                 onClick={() => handleSelect(idx)}
-                disabled={locked || submitting}
-                whileTap={!locked ? { scale: 0.94 } : {}}
+                disabled={expired || submitting}
+                whileTap={!expired ? { scale: 0.93 } : {}}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{
-                  opacity: locked && !isChosen ? 0.4 : 1,
-                  y: 0,
-                  scale: isChosen ? 0.97 : 1,
+                  opacity: dimmed ? 0.35 : 1,
+                  y:       0,
+                  scale:   isChosen ? 0.97 : 1,
                 }}
-                transition={{ delay: idx * 0.06 }}
+                transition={{ delay: idx * 0.06, duration: 0.2 }}
                 className={`
                   relative p-4 rounded-2xl border-2 text-left font-bold text-white
-                  bg-gradient-to-br ${s.bg} ${s.border}
-                  transition-all
-                  ${isChosen
-                    ? 'ring-4 ring-white/50 brightness-110'
-                    : !locked ? 'hover:brightness-110' : ''
-                  }
-                  ${locked ? 'cursor-default' : 'cursor-pointer'}
+                  bg-gradient-to-br ${s.bg} ${s.border} transition-all
+                  ${isChosen ? 'ring-4 ring-white/50 brightness-110' : ''}
+                  ${!expired && !isChosen ? 'hover:brightness-110' : ''}
+                  ${expired ? 'cursor-default' : 'cursor-pointer'}
                 `}
               >
                 <span className="block text-xs font-black text-white/60 mb-1">
@@ -190,11 +193,13 @@ export default function QuestionScreen({
           })}
         </div>
 
-        {/* Score feedback */}
-        <AnimatePresence>
-          {lastScore !== null && (
+        {/* Status feedback strip */}
+        <AnimatePresence mode="wait">
+          {/* Score after answering */}
+          {lastScore !== null && !expired && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              key="score"
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               className={`text-center rounded-xl p-3 font-bold text-sm
@@ -203,36 +208,40 @@ export default function QuestionScreen({
                   : 'bg-red-500/20 border border-red-500/30 text-red-300'
                 }`}
             >
-              {lastScore > 0 ? `+${lastScore} pts` : 'Wrong answer'}
-              {!expired && (
-                <span className="text-white/40 font-normal ml-2">
-                  · tap to change
-                </span>
-              )}
+              {lastScore > 0 ? `+${lastScore} pts` : 'Wrong — 0 pts'}
+              <span className="text-white/40 font-normal ml-2">· tap to change</span>
             </motion.div>
           )}
 
+          {/* Time expired — did not answer */}
           {expired && selected === null && (
             <motion.div
+              key="no-answer"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center rounded-xl p-3 bg-red-500/20 border border-red-500/30
-                         text-red-300 font-bold text-sm"
+              className="text-center rounded-xl p-3 bg-red-500/20 border
+                         border-red-500/30 text-red-300 font-bold text-sm"
             >
-              ⏰ No answer submitted
+              ⏰ No answer — 0 pts
             </motion.div>
           )}
 
+          {/* Time expired — answered */}
           {expired && selected !== null && (
             <motion.div
+              key="locked"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center rounded-xl p-3 glass text-white/50 text-sm"
+              className="text-center rounded-xl p-3 glass text-white/50 text-sm font-medium"
             >
+              {lastScore !== null
+                ? (lastScore > 0 ? `+${lastScore} pts · ` : `0 pts · `)
+                : ''}
               Waiting for results…
             </motion.div>
           )}
         </AnimatePresence>
+
       </div>
     </div>
   );

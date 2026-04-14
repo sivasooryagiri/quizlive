@@ -6,6 +6,17 @@
  *   questions/{id}      – question documents, ordered by `order`
  *   players/{id}        – player documents
  *   answers/{qId_pId}   – one answer doc per (question, player) pair
+ *
+ * Scoring formula (per question, max 30 pts):
+ *   correct → max(5, round(30 - (timeTaken / timer) * 25))
+ *   wrong   → 0
+ *
+ *   Examples (15s timer):
+ *     0s  → 30 pts   (fastest)
+ *     5s  → ~22 pts
+ *     10s → ~13 pts
+ *     15s → 5 pts    (slowest correct)
+ *   Works proportionally for any timer length.
  */
 import {
   doc,
@@ -27,11 +38,19 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 
-// ─── Firestore refs ───────────────────────────────────────────
+// ─── Refs ─────────────────────────────────────────────────────
 const gameRef      = doc(db, 'meta', 'gameState');
 const questionsCol = () => collection(db, 'questions');
 const playersCol   = () => collection(db, 'players');
 const answersCol   = () => collection(db, 'answers');
+
+// ─── Scoring ──────────────────────────────────────────────────
+export const calcScore = (isCorrect, timeTaken, timer) => {
+  if (!isCorrect) return 0;
+  const t = Math.max(0, timeTaken);
+  const d = Math.max(1, timer);               // avoid division by zero
+  return Math.max(5, Math.round(30 - (t / d) * 25));
+};
 
 // ─── Game state ───────────────────────────────────────────────
 export const initGameState = async () => {
@@ -61,6 +80,7 @@ export const startQuiz = () =>
     questionStartTime: serverTimestamp(),
   });
 
+/** Idempotent via transaction — safe for multiple host tabs. */
 export const advanceToResults = () =>
   runTransaction(db, async (tx) => {
     const snap = await tx.get(gameRef);
@@ -167,8 +187,8 @@ export const getPlayer = (id) =>
 
 // ─── Answers ──────────────────────────────────────────────────
 /**
- * Supports re-submission: subtracts old score, adds new score.
- * score = correct ? max(100, 1000 - floor(timeTaken) * 50) : 0
+ * Re-submission safe: subtracts previous score, adds new score.
+ * Pass `timer` so scoring is proportional regardless of question timer.
  */
 export const submitAnswer = async ({
   questionId,
@@ -176,18 +196,16 @@ export const submitAnswer = async ({
   answer,
   timeTaken,
   correctAnswer,
+  timer = 15,
 }) => {
   const isCorrect = answer === correctAnswer;
-  const score     = isCorrect
-    ? Math.max(100, 1000 - Math.floor(timeTaken) * 50)
-    : 0;
-
+  const score     = calcScore(isCorrect, timeTaken, timer);
   const answerId  = `${questionId}_${playerId}`;
   const answerRef = doc(db, 'answers', answerId);
 
-  // Get existing answer to calculate score delta
-  const existing  = await getDoc(answerRef);
-  const oldScore  = existing.exists() ? (existing.data().score || 0) : 0;
+  // Get old score to calculate delta (handles re-submissions)
+  const existing = await getDoc(answerRef);
+  const oldScore = existing.exists() ? (existing.data().score || 0) : 0;
 
   await setDoc(answerRef, {
     questionId,
@@ -199,13 +217,13 @@ export const submitAnswer = async ({
     timestamp: serverTimestamp(),
   });
 
-  // Atomically adjust player score (subtract old, add new)
+  // Atomically adjust running total: remove old pts, add new pts
   await runTransaction(db, async (tx) => {
     const playerRef  = doc(db, 'players', playerId);
     const playerSnap = await tx.get(playerRef);
     if (playerSnap.exists()) {
       const current = playerSnap.data().score || 0;
-      tx.update(playerRef, { score: current - oldScore + score });
+      tx.update(playerRef, { score: Math.max(0, current - oldScore + score) });
     }
   });
 
@@ -222,3 +240,13 @@ export const subscribeToQuestionAnswers = (questionId, cb) =>
     query(answersCol(), where('questionId', '==', questionId)),
     (snap) => cb(snap.docs.map((d) => d.data()))
   );
+
+// ─── Rank helper (handles ties) ───────────────────────────────
+/**
+ * Returns the 1-based rank of `playerId` in a sorted player list.
+ * Tied scores share the same rank (e.g. two players at 60 = both rank 1).
+ */
+export const getPlayerRank = (players, playerId) => {
+  const myScore = players.find((p) => p.id === playerId)?.score ?? 0;
+  return players.filter((p) => p.score > myScore).length + 1;
+};
