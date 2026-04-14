@@ -210,25 +210,29 @@ export const submitAnswer = async ({
   const score     = calcScore(isCorrect, timeTaken, timer);
   const answerId  = `${questionId}_${playerId}`;
   const answerRef = doc(db, 'answers', answerId);
+  const playerRef = doc(db, 'players', playerId);
 
-  // Get old score to calculate delta (handles re-submissions)
-  const existing = await getDoc(answerRef);
-  const oldScore = existing.exists() ? (existing.data().score || 0) : 0;
-
-  await setDoc(answerRef, {
-    questionId,
-    playerId,
-    answer,
-    timeTaken,
-    score,
-    isCorrect,
-    timestamp: serverTimestamp(),
-  });
-
-  // Atomically adjust running total: remove old pts, add new pts
+  // Single atomic transaction: read both docs, write both docs.
+  // Eliminates the bug where setDoc succeeds but score transaction fails,
+  // leaving answer saved but score never updated.
   await runTransaction(db, async (tx) => {
-    const playerRef  = doc(db, 'players', playerId);
-    const playerSnap = await tx.get(playerRef);
+    const [answerSnap, playerSnap] = await Promise.all([
+      tx.get(answerRef),
+      tx.get(playerRef),
+    ]);
+
+    const oldScore = answerSnap.exists() ? (answerSnap.data().score || 0) : 0;
+
+    tx.set(answerRef, {
+      questionId,
+      playerId,
+      answer,
+      timeTaken,
+      score,
+      isCorrect,
+      timestamp: serverTimestamp(),
+    });
+
     if (playerSnap.exists()) {
       const current = playerSnap.data().score || 0;
       tx.update(playerRef, { score: Math.max(0, current - oldScore + score) });
