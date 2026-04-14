@@ -27,12 +27,12 @@ export function SolutoLogo({ size = 'md' }) {
   );
 }
 
-/** Small footer bar — for player phone screens */
+/** Small footer bar — fixed at bottom, never affects layout */
 export function PoweredBySoluto() {
   return (
-    <div className="w-full flex items-center justify-center gap-2 py-3 mt-auto">
+    <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-2 py-2 pointer-events-none z-50">
       <span className="text-white/30 text-xs font-medium">Powered by</span>
-      <SolutoLogo size="xs" />
+      <span className="pointer-events-auto"><SolutoLogo size="xs" /></span>
     </div>
   );
 }
