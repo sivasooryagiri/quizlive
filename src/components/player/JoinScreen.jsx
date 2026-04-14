@@ -1,16 +1,24 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-export default function JoinScreen({ onJoin, joining, error, gameTitle = 'QuizLive' }) {
+export default function JoinScreen({ onJoin, joining, error, suggested, onClearSuggested, gameTitle = 'QuizLive' }) {
   const [name, setName] = useState('');
+
+  // When a suggestion comes in, pre-fill the input
+  useEffect(() => {
+    if (suggested) setName(suggested);
+  }, [suggested]);
 
   const submit = (e) => {
     e.preventDefault();
     if (name.trim().length >= 2) onJoin(name);
   };
 
+  const isTaken = error === 'name_taken';
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-gradient-to-br from-[#0f0a1e] via-[#1a0a2e] to-[#0a1628]">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6
+                    bg-gradient-to-br from-[#0f0a1e] via-[#1a0a2e] to-[#0a1628]">
       {/* Background orbs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-brand-700/20 rounded-full blur-3xl" />
@@ -23,7 +31,7 @@ export default function JoinScreen({ onJoin, joining, error, gameTitle = 'QuizLi
         transition={{ duration: 0.5 }}
         className="relative z-10 w-full max-w-sm"
       >
-        {/* Logo / title */}
+        {/* Logo */}
         <div className="text-center mb-8">
           <motion.div
             animate={{ rotate: [0, 5, -5, 0] }}
@@ -36,7 +44,6 @@ export default function JoinScreen({ onJoin, joining, error, gameTitle = 'QuizLi
           <p className="text-brand-300 mt-2 text-sm">Enter your name to join</p>
         </div>
 
-        {/* Form */}
         <form onSubmit={submit} className="glass rounded-2xl p-6 space-y-4">
           <div>
             <label className="block text-xs font-semibold text-brand-300 mb-2 uppercase tracking-wider">
@@ -45,7 +52,10 @@ export default function JoinScreen({ onJoin, joining, error, gameTitle = 'QuizLi
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (suggested) onClearSuggested();
+              }}
               placeholder="e.g. Alex 🚀"
               maxLength={20}
               autoFocus
@@ -55,9 +65,35 @@ export default function JoinScreen({ onJoin, joining, error, gameTitle = 'QuizLi
             />
           </div>
 
-          {error && (
-            <p className="text-red-400/80 text-xs">{error}</p>
-          )}
+          {/* Name taken notice */}
+          <AnimatePresence>
+            {isTaken && suggested && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="glass rounded-xl px-4 py-3 border border-amber-500/30"
+              >
+                <p className="text-amber-300 text-xs font-semibold">
+                  That name is taken.
+                </p>
+                <p className="text-white/60 text-xs mt-0.5">
+                  Joining as <span className="text-white font-bold">"{suggested}"</span> — edit above if you want a different name.
+                </p>
+              </motion.div>
+            )}
+
+            {/* Generic error */}
+            {error && !isTaken && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-red-400/80 text-xs"
+              >
+                {error}
+              </motion.p>
+            )}
+          </AnimatePresence>
 
           <motion.button
             type="submit"
@@ -74,9 +110,7 @@ export default function JoinScreen({ onJoin, joining, error, gameTitle = 'QuizLi
                 <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
                 Joining…
               </span>
-            ) : (
-              'Join Game →'
-            )}
+            ) : isTaken ? `Join as "${name}" →` : 'Join Game →'}
           </motion.button>
         </form>
 

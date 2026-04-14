@@ -156,12 +156,17 @@ export const reorderQuestions = async (orderedIds) => {
 
 // ─── Players ──────────────────────────────────────────────────
 export const joinGame = async (name) => {
-  const existing = await getDocs(
-    query(playersCol(), where('name', '==', name))
-  );
-  // Name already taken — throw so UI can show error
-  if (!existing.empty) {
-    throw new Error('NAME_TAKEN');
+  // Fetch all players to do case-insensitive check (fine for ≤50 players)
+  const allSnap  = await getDocs(playersCol());
+  const allNames = allSnap.docs.map((d) => d.data().name.toLowerCase());
+
+  if (allNames.includes(name.toLowerCase())) {
+    // Find next free suffix: Siva2, Siva3 …
+    let n = 2;
+    while (allNames.includes(`${name.toLowerCase()}${n}`)) n++;
+    const err = new Error('NAME_TAKEN');
+    err.suggested = `${name}${n}`;
+    throw err;
   }
 
   const ref = doc(playersCol());

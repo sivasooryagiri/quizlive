@@ -20,7 +20,7 @@ const fade = {
 
 export default function PlayerPage() {
   const { gameState, loading }                         = useGameState();
-  const { playerId, playerName, join, joining, error } = usePlayer();
+  const { playerId, playerName, join, joining, error, suggested, setSuggested, setError } = usePlayer();
   const [questions, setQuestions]                      = useState([]);
 
   useEffect(() => {
@@ -36,6 +36,8 @@ export default function PlayerPage() {
         onJoin={join}
         joining={joining}
         error={error}
+        suggested={suggested}
+        onClearSuggested={() => { setSuggested(''); setError(''); }}
         gameTitle={gameState?.title}
       />
     );

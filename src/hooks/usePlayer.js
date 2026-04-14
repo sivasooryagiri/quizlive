@@ -9,12 +9,14 @@ export default function usePlayer() {
   const [playerName, setPlayerName] = useState(() => localStorage.getItem(PLAYER_NAME_KEY) || '');
   const [joining,    setJoining]    = useState(false);
   const [error,      setError]      = useState('');
+  const [suggested,  setSuggested]  = useState(''); // suggested alternative name
 
   const join = async (name) => {
     const trimmed = name.trim();
     if (!trimmed) return;
     setJoining(true);
     setError('');
+    setSuggested('');
     try {
       const id = await joinGame(trimmed);
       localStorage.setItem(PLAYER_ID_KEY,   id);
@@ -22,11 +24,12 @@ export default function usePlayer() {
       setPlayerId(id);
       setPlayerName(trimmed);
     } catch (e) {
-      setError(
-        e.message === 'NAME_TAKEN'
-          ? 'Name already taken.'
-          : 'Could not join. Try again.'
-      );
+      if (e.message === 'NAME_TAKEN') {
+        setSuggested(e.suggested);
+        setError('name_taken');
+      } else {
+        setError('Could not join. Try again.');
+      }
     } finally {
       setJoining(false);
     }
@@ -39,5 +42,5 @@ export default function usePlayer() {
     setPlayerName('');
   };
 
-  return { playerId, playerName, join, leave, joining, error };
+  return { playerId, playerName, join, leave, joining, error, suggested, setSuggested, setError };
 }
