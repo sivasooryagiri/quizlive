@@ -111,7 +111,7 @@ export default function LeaderboardPhase({ gameState, questions }) {
     return unsub;
   }, []);
 
-  const topTen = players.slice(0, 10);
+  const topTen = players.slice(0, 50);
   const isLast = (gameState?.currentQuestionIndex ?? 0) >= (questions.length - 1);
 
   // Attach display rank to each player (tie-aware)
