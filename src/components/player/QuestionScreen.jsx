@@ -118,7 +118,7 @@ export default function QuestionScreen({ question, playerId, questionStartTime }
         </motion.div>
 
         {/* Options */}
-        <div className="grid grid-cols-2 gap-3 flex-1">
+        <div className="flex flex-col gap-2.5 flex-1 justify-center">
           {question.options.map((opt, idx) => {
             const s        = OPTION_STYLES[idx];
             const isChosen = selected === idx;
@@ -129,26 +129,25 @@ export default function QuestionScreen({ question, playerId, questionStartTime }
                 key={idx}
                 onClick={() => handleSelect(idx)}
                 disabled={expired || submitting}
-                whileTap={!expired ? { scale: 0.93 } : {}}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: dimmed ? 0.35 : 1, y: 0, scale: isChosen ? 0.97 : 1 }}
+                whileTap={!expired ? { scale: 0.98 } : {}}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: dimmed ? 0.35 : 1, x: 0, scale: isChosen ? 0.98 : 1 }}
                 transition={{ delay: idx * 0.06 }}
                 className={`
-                  relative p-4 rounded-2xl border-2 text-left font-bold text-white
-                  bg-gradient-to-br ${s.bg} ${s.border} transition-all
+                  relative flex items-center gap-3 px-4 py-3.5 rounded-2xl border-2
+                  font-bold text-white bg-gradient-to-r ${s.bg} ${s.border} transition-all
                   ${isChosen ? 'ring-4 ring-white/50 brightness-110' : ''}
                   ${!expired && !isChosen ? 'hover:brightness-110' : ''}
                   ${expired ? 'cursor-default' : 'cursor-pointer'}
                 `}
               >
-                <span className="block text-xs font-black text-white/60 mb-1">{s.label}</span>
-                <span className="text-sm leading-snug">{opt}</span>
+                <span className="text-sm font-black text-white/70 w-5 shrink-0">{s.label}</span>
+                <span className="text-sm leading-snug flex-1 text-left">{opt}</span>
                 {isChosen && (
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute top-2 right-2 w-6 h-6 bg-white rounded-full
-                               flex items-center justify-center shadow"
+                    className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow shrink-0"
                   >
                     <span className="text-xs text-purple-700 font-black">✓</span>
                   </motion.div>
