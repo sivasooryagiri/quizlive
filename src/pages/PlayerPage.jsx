@@ -20,7 +20,7 @@ const fade = {
 
 export default function PlayerPage() {
   const { gameState, loading }                         = useGameState();
-  const { playerId, playerName, join, joining, error, suggested, setSuggested, setError } = usePlayer();
+  const { playerId, playerName, join, joining, error, suggested, setSuggested, setError, verified } = usePlayer();
   const [questions, setQuestions]                      = useState([]);
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export default function PlayerPage() {
     return unsub;
   }, []);
 
-  if (loading) return <LoadingSpinner />;
+  if (loading || !verified) return <LoadingSpinner />;
 
   if (!playerId) {
     return (
