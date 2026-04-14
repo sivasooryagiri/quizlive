@@ -78,7 +78,7 @@ export default function WaitingScreen({ gameState }) {
           className="text-center"
         >
           <p className="text-white/40 text-sm uppercase tracking-widest mb-1">Scan QR or visit</p>
-          <p className="text-brand-300 text-2xl font-bold">{joinUrl}</p>
+          <p className="text-brand-300 text-2xl font-bold">{joinUrl.replace(/^https?:\/\//, '')}</p>
         </motion.div>
 
         {/* Animated dots */}
