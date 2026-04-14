@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import useGameState    from '../hooks/useGameState';
+import { SolutoLogo } from '../components/shared/SolutoBrand';
 import { subscribeToQuestions, subscribeToPlayers } from '../firebase/db';
 import LoginScreen     from '../components/admin/LoginScreen';
 import QuestionEditor  from '../components/admin/QuestionEditor';
@@ -45,6 +46,10 @@ export default function AdminPage() {
         <div className="flex items-center gap-3">
           <div className="glass rounded-xl px-3 py-1.5 text-xs text-white/60">
             {players.length} player{players.length !== 1 ? 's' : ''} · {questions.length} Q
+          </div>
+          <div className="flex items-center gap-1 opacity-50">
+            <span className="text-white/40 text-xs">by</span>
+            <SolutoLogo size="xs" />
           </div>
           <button
             onClick={() => { sessionStorage.removeItem('ql_admin'); setAuthed(false); }}

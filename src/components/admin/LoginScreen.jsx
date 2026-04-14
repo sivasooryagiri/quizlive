@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { PoweredBySoluto } from '../shared/SolutoBrand';
 
 export default function LoginScreen({ onLogin }) {
   const [password, setPassword] = useState('');
@@ -52,6 +53,7 @@ export default function LoginScreen({ onLogin }) {
           </button>
         </form>
       </motion.div>
+      <PoweredBySoluto />
     </div>
   );
 }
