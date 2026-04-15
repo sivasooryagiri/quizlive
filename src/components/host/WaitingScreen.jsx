@@ -93,6 +93,15 @@ export default function WaitingScreen({ gameState }) {
           ))}
         </div>
       </div>
+
+      <a
+        href="https://deadtechguy.fun"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute bottom-4 left-0 right-0 text-center text-white/20 text-xs hover:text-white/40 transition-colors z-10"
+      >
+        Built by DeadTechGuy
+      </a>
     </div>
   );
 }
