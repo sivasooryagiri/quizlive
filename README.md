@@ -74,6 +74,16 @@ See [docs/deploy-local.md](docs/deploy-local.md) for the full setup including Fi
 
 ---
 
+## License & use
+
+This project is open source and free to use, modify, and self-host.
+
+**It is not to be used for commercial or monetary purposes.** Do not sell access to it, charge players, bundle it into a paid product, or use it as a revenue-generating service. It was built to make quizzes free and accessible — keep it that way.
+
+Personal use, educational use, internal company events, community events — all fine.
+
+---
+
 ## About
 
 Built for fun when a friend couldn't find a quiz app that was actually free and usable.
