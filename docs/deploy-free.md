@@ -1,18 +1,24 @@
-# Free Hosting — Firebase + Vercel (up to ~50 concurrent users)
+# Free Hosting — Firebase + Vercel (80–100 simultaneous players)
 
 The easiest way to get QuizLive live on the internet for free.  
 Firebase handles the real-time database, Vercel serves the frontend.
 
-**Cost: $0.** Firebase Spark (free) plan + Vercel Hobby (free) plan is more than enough for a quiz with up to ~50 players.
+**Cost: $0.** Firebase Spark (free) plan + Vercel Hobby (free) plan covers everything for a typical quiz event.
 
 ---
 
-## What you get
+## Player limits on the free tier
 
-| Service | Free tier limits | More than enough? |
-|---------|-----------------|-------------------|
-| Firebase Firestore | 50k reads/day, 20k writes/day, 1 GB storage | Yes — a 50-player quiz uses ~5k reads |
-| Vercel | Unlimited deployments, 100 GB bandwidth/month | Yes |
+| Limit | What it means |
+|-------|--------------|
+| **100 concurrent Firestore connections** | The real ceiling — players holding an active connection (in lobby, answering, watching leaderboard) each use one. Safe up to **80–100 simultaneously active players**. |
+| **50,000 reads / day** | A 100-player, 20-question session uses ~8–10k reads. You can run several sessions a day. |
+| **20,000 writes / day** | Same session uses ~500–1,000 writes. Barely touched. |
+| **1 GB storage** | Questions are tiny text documents. Effectively unlimited. |
+| **Unlimited questions** | No cap on how many questions you store. |
+| **Unlimited total players** | No cap on total registered players — only concurrent connections matter. |
+
+> If you need 150+ simultaneously active players, upgrade to **Blaze (pay-as-you-go)**. Cost for a typical large session is fractions of a cent — you only pay for what you use, and there's a free quota built in.
 
 ---
 
@@ -121,9 +127,10 @@ Open admin, add a few questions, open host on a big screen, and have players joi
 
 ## Staying within the free tier
 
-For a typical quiz session (50 players, 10 questions):
+For a typical session (80 players, 15 questions):
 
-- **Reads:** ~10k (well within 50k/day)
-- **Writes:** ~500 (well within 20k/day)
+- **Reads:** ~12k (well within 50k/day)
+- **Writes:** ~800 (well within 20k/day)
+- **Connections:** ~80 peak (within the 100 limit)
 
-If you're running multiple sessions a day with large groups, monitor usage in the Firebase console under **Usage** tab. The free tier resets daily.
+Monitor usage in Firebase console → **Usage** tab. The daily quotas reset at midnight Pacific time.

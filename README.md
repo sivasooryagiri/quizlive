@@ -43,7 +43,7 @@ Run on your laptop and share with everyone on the same Wi-Fi. Best for classroom
 Host on a public IP using AWS free tier. Anyone with the link can join from anywhere. Good for remote events or public quizzes.
 
 ### [Firebase + Vercel — free cloud hosting](docs/deploy-free.md)
-The easiest path to a live public URL at $0 cost. Handles up to ~50 concurrent players on the free tier with zero configuration overhead.
+The easiest path to a live public URL at $0 cost. Handles 80–100 simultaneous players on the free tier (Spark plan allows 100 concurrent Firestore connections). Questions and total player count are unlimited — the only real ceiling is concurrent active connections.
 
 ---
 
