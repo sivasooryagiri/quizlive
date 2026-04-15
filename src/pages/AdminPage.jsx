@@ -16,49 +16,21 @@ const TABS = [
 
 function AboutCorner() {
   return (
-    <div className="fixed bottom-4 right-4 z-50 text-right max-w-[220px]">
-      <div className="flex justify-end mb-1.5">
-        <a href="https://deadtechguy.fun" target="_blank" rel="noopener noreferrer">
-          <img
-            src="/builder.jpg"
-            alt="SivaSoorya G.R"
-            className="w-8 h-8 rounded-full object-cover opacity-30 hover:opacity-60 transition-opacity"
-          />
-        </a>
-      </div>
-      <p className="text-white/20 text-xs leading-relaxed">
-        Built by{' '}
-        <a
-          href="https://deadtechguy.fun"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-white/35 hover:text-white/60 transition-colors"
-        >
-          SivaSoorya G.R
-        </a>
-        {' '}— ML/DL creator, co-founder of Soluto. Opened this up so anyone can run their own
-        quiz without a paywall or a vendor deciding what you can do.
-        Hosting is yours — local, private network, or cloud.
-      </p>
-      <div className="flex items-center justify-end gap-3 mt-1.5">
-        <a
-          href="https://github.com/sivasooryagiri/quiz-live"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-white/25 hover:text-white/50 transition-colors text-xs"
-        >
-          GitHub
-        </a>
-        <a
-          href="https://deadtechguy.fun"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-white/25 hover:text-white/50 transition-colors text-xs"
-        >
-          deadtechguy.fun
-        </a>
-      </div>
-    </div>
+    <a
+      href="/about"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="fixed bottom-4 right-4 z-50 flex items-center gap-2 group"
+    >
+      <img
+        src="/builder.jpg"
+        alt="SivaSoorya G.R"
+        className="w-7 h-7 rounded-full object-cover opacity-20 group-hover:opacity-50 transition-opacity"
+      />
+      <span className="text-white/20 group-hover:text-white/50 transition-colors text-xs">
+        About
+      </span>
+    </a>
   );
 }
 
