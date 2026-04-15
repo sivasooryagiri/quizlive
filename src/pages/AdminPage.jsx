@@ -56,7 +56,7 @@ export default function AdminPage() {
       {/* Header */}
       <header className="glass border-b border-white/10 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">🧠</span>
+          <img src="/logo.svg" alt="QuizLive" className="w-8 h-8" />
           <div>
             <h1 className="font-black text-white leading-none">Admin Panel</h1>
             <p className="text-brand-300 text-xs">{gameState?.title ?? 'QuizLive'}</p>

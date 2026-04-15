@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1e0a3c"/>
+      <stop offset="100%" stop-color="#0f0a1e"/>
+    </linearGradient>
+    <linearGradient id="stroke-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="bolt-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c4b5fd"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="200" height="200" rx="42" fill="url(#bg)"/>
+
+  <!-- Subtle inner glow -->
+  <rect width="200" height="200" rx="42" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.3"/>
+
+  <!-- Q ring -->
+  <circle cx="97" cy="95" r="52" fill="none" stroke="url(#stroke-grad)" stroke-width="13" stroke-linecap="round" filter="url(#glow)"/>
+
+  <!-- Q tail -->
+  <line x1="134" y1="128" x2="158" y2="156" stroke="url(#stroke-grad)" stroke-width="13" stroke-linecap="round" filter="url(#glow)"/>
+
+  <!-- Lightning bolt -->
+  <path d="M103 50 L81 100 L99 100 L78 148 L122 88 L104 88 Z" fill="url(#bolt-grad)" filter="url(#glow)"/>
+
+  <!-- Live dot -->
+  <circle cx="152" cy="48" r="10" fill="#ef4444" opacity="0.9"/>
+  <circle cx="152" cy="48" r="5" fill="#fca5a5"/>
+</svg>

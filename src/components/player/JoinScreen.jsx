@@ -36,9 +36,9 @@ export default function JoinScreen({ onJoin, joining, error, suggested, onClearS
           <motion.div
             animate={{ rotate: [0, 5, -5, 0] }}
             transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-            className="text-6xl mb-4"
+            className="mb-4"
           >
-            🧠
+            <img src="/logo.svg" alt="QuizLive" className="w-16 h-16 mx-auto" />
           </motion.div>
           <h1 className="text-3xl font-black gradient-text">{gameTitle}</h1>
           <p className="text-brand-300 mt-2 text-sm">Enter your name to join</p>
