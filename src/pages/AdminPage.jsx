@@ -12,8 +12,46 @@ const TABS = [
   { id: 'questions', label: '📝 Questions' },
   { id: 'game',      label: '🎮 Game Control' },
   { id: 'host',      label: '🖥 Host / QR' },
-  { id: 'about',     label: '👤 About' },
 ];
+
+function AboutCorner() {
+  return (
+    <div className="fixed bottom-4 right-4 z-50 text-right max-w-[220px]">
+      <p className="text-white/20 text-xs leading-relaxed">
+        Built by{' '}
+        <a
+          href="https://deadtechguy.fun"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-white/35 hover:text-white/60 transition-colors"
+        >
+          SivaSoorya G.R
+        </a>
+        {' '}— ML/DL creator, co-founder of Soluto. Opened this up so anyone can run their own
+        quiz without a paywall or a vendor deciding what you can do.
+        Hosting is yours — local, private network, or cloud.
+      </p>
+      <div className="flex items-center justify-end gap-3 mt-1.5">
+        <a
+          href="https://github.com/sivasooryagiri/quiz-live"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-white/25 hover:text-white/50 transition-colors text-xs"
+        >
+          GitHub
+        </a>
+        <a
+          href="https://deadtechguy.fun"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-white/25 hover:text-white/50 transition-colors text-xs"
+        >
+          deadtechguy.fun
+        </a>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminPage() {
   const [authed, setAuthed]       = useState(() => sessionStorage.getItem('ql_admin') === '1');
@@ -90,62 +128,10 @@ export default function AdminPage() {
           {tab === 'host' && (
             <HostControl gameState={gameState} />
           )}
-          {tab === 'about' && (
-            <div className="space-y-4">
-              {/* Builder card */}
-              <div className="glass-strong rounded-2xl p-6">
-                <p className="text-xs text-white/40 uppercase tracking-wider font-semibold mb-4">The Builder</p>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-purple-600
-                                  flex items-center justify-center text-2xl shrink-0 shadow-lg">
-                    🧑‍💻
-                  </div>
-                  <div>
-                    <p className="text-white font-black text-lg leading-none">deadtechguy</p>
-                    <a
-                      href="https://deadtechguy.fun"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-brand-300 text-sm hover:text-brand-200 transition-colors"
-                    >
-                      deadtechguy.fun ↗
-                    </a>
-                  </div>
-                </div>
-                <p className="text-white/60 text-sm leading-relaxed">
-                  Used Claude for help — nahh, he did the work. I just lived, paved his path and made it clean.
-                </p>
-              </div>
-
-              {/* Project story */}
-              <div className="glass rounded-2xl p-6">
-                <p className="text-xs text-white/40 uppercase tracking-wider font-semibold mb-3">Why This Exists</p>
-                <p className="text-white/70 text-sm leading-relaxed">
-                  A friend told me she couldn't find an interactive quiz app that was free and actually usable —
-                  something like Slido or Kahoot but without the paywall. So I built this for fun.
-                </p>
-                <p className="text-white/70 text-sm leading-relaxed mt-3">
-                  It's free, open source, and fully in your control — run it on localhost, share on a private IP
-                  inside your network, or host it publicly on the cloud. No forced subscriptions, no vendor lock-in.
-                  Anyone can set it up for a public quiz in minutes.
-                </p>
-              </div>
-
-              {/* What it is */}
-              <div className="glass rounded-2xl p-6">
-                <p className="text-xs text-white/40 uppercase tracking-wider font-semibold mb-3">What It Is</p>
-                <ul className="space-y-2 text-sm text-white/70">
-                  <li className="flex items-start gap-2"><span className="text-brand-400 mt-0.5">→</span> Real-time multiplayer quiz — works like Kahoot / Slido</li>
-                  <li className="flex items-start gap-2"><span className="text-brand-400 mt-0.5">→</span> 100% free and open source</li>
-                  <li className="flex items-start gap-2"><span className="text-brand-400 mt-0.5">→</span> Self-hostable: localhost, private network, or public cloud</li>
-                  <li className="flex items-start gap-2"><span className="text-brand-400 mt-0.5">→</span> Clean UI — simple enough for any audience</li>
-                  <li className="flex items-start gap-2"><span className="text-brand-400 mt-0.5">→</span> Quick to set up — no unnecessary complexity</li>
-                </ul>
-              </div>
-            </div>
-          )}
         </motion.div>
       </main>
+
+      <AboutCorner />
     </div>
   );
 }
