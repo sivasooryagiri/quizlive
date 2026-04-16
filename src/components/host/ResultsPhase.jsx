@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
   LabelList,
 } from 'recharts';
-import { subscribeToQuestionAnswers } from '../../firebase/db';
+import { subscribeToQuestionAnswers, subscribeToAnswerKey } from '../../firebase/db';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 
@@ -30,10 +30,18 @@ function CustomLabel({ x, y, width, height, value, isCorrect }) {
 }
 
 export default function ResultsPhase({ question, questionIndex, totalQuestions }) {
-  const [answers, setAnswers] = useState([]);
+  const [answers,   setAnswers]   = useState([]);
+  const [correctIdx, setCorrectIdx] = useState(null);
 
   useEffect(() => {
     const unsub = subscribeToQuestionAnswers(question.id, setAnswers);
+    return unsub;
+  }, [question.id]);
+
+  useEffect(() => {
+    const unsub = subscribeToAnswerKey(question.id, (k) =>
+      setCorrectIdx(k?.correctAnswer ?? null)
+    );
     return unsub;
   }, [question.id]);
 
@@ -45,7 +53,7 @@ export default function ResultsPhase({ question, questionIndex, totalQuestions }
   const chartData = question.options.map((opt, i) => ({
     name:    `${OPTION_LABELS[i]}. ${opt}`,
     count:   counts[i],
-    correct: i === question.correctAnswer,
+    correct: i === correctIdx,
   }));
 
   return (
@@ -125,16 +133,18 @@ export default function ResultsPhase({ question, questionIndex, totalQuestions }
       </motion.div>
 
       {/* Correct answer callout */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
-        className="mt-4 text-center"
-      >
-        <span className="glass rounded-xl px-6 py-3 text-green-300 font-bold text-lg inline-block">
-          ✅ Correct answer: {OPTION_LABELS[question.correctAnswer]}. {question.options[question.correctAnswer]}
-        </span>
-      </motion.div>
+      {correctIdx != null && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="mt-4 text-center"
+        >
+          <span className="glass rounded-xl px-6 py-3 text-green-300 font-bold text-lg inline-block">
+            ✅ Correct answer: {OPTION_LABELS[correctIdx]}. {question.options[correctIdx]}
+          </span>
+        </motion.div>
+      )}
     </div>
   );
 }

@@ -3,7 +3,14 @@ import { motion } from 'framer-motion';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import useGameState    from '../hooks/useGameState';
-import { subscribeToQuestions, subscribeToPlayers, saveSession, advanceToResults } from '../firebase/db';
+import {
+  subscribeToQuestions,
+  subscribeToAnswerKeys,
+  subscribeToPlayers,
+  saveSession,
+  advanceToResults,
+  migrateAnswerKeys,
+} from '../firebase/db';
 import LoginScreen     from '../components/admin/LoginScreen';
 import QuestionEditor  from '../components/admin/QuestionEditor';
 import GameControl     from '../components/admin/GameControl';
@@ -44,6 +51,7 @@ export default function AdminPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [tab,         setTab]         = useState('game');
   const [questions,   setQuestions]   = useState([]);
+  const [answerKeys,  setAnswerKeys]  = useState({});
   const [players,     setPlayers]     = useState([]);
   const { gameState, loading, error } = useGameState();
   const sessionSaving                 = useRef(false);
@@ -59,10 +67,19 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!authed) return;
+    // One-shot migration for any pre-split question docs.
+    migrateAnswerKeys().catch(console.error);
     const u1 = subscribeToQuestions(setQuestions);
     const u2 = subscribeToPlayers(setPlayers);
-    return () => { u1(); u2(); };
+    const u3 = subscribeToAnswerKeys(setAnswerKeys);
+    return () => { u1(); u2(); u3(); };
   }, [authed]);
+
+  // Merge correctAnswer back in for admin UI (editor needs to display + edit it).
+  const enrichedQuestions = questions.map((q) => ({
+    ...q,
+    correctAnswer: answerKeys[q.id] ?? 0,
+  }));
 
   // Save session when quiz ends — admin is authenticated so this write is allowed.
   useEffect(() => {
@@ -161,7 +178,7 @@ export default function AdminPage() {
           transition={{ duration: 0.2 }}
         >
           {tab === 'questions' && (
-            <QuestionEditor questions={questions} />
+            <QuestionEditor questions={enrichedQuestions} />
           )}
           {tab === 'game' && (
             <GameControl gameState={gameState} questions={questions} />

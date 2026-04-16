@@ -9,6 +9,9 @@ service cloud.firestore {
     function question(qId) {
       return get(/databases/$(database)/documents/questions/$(qId)).data;
     }
+    function answerKey(qId) {
+      return get(/databases/$(database)/documents/answerKeys/$(qId)).data;
+    }
     // Seconds elapsed since the current question started, per server clock.
     function serverElapsed() {
       return duration.value(request.time - game().questionStartTime, 's');
@@ -21,12 +24,14 @@ service cloud.firestore {
 
     // Validates an answer write against authoritative server state:
     //   - phase must be 'question'
-    //   - timeTaken must be within 2s of server-measured elapsed (blocks "always 0s" cheats)
-    //   - isCorrect must match the actual correctAnswer of the question
+    //   - answer must be a valid option index (0..3)
+    //   - timeTaken must be within 2s of server-measured elapsed
+    //   - isCorrect must match the actual correctAnswer (read from answerKeys)
     //   - score must be 0 for wrong; 5..maxScoreFor(timeTaken, timer) for correct
     function answerIsValid(d) {
       return d.questionId is string
           && d.answer is int
+          && d.answer >= 0 && d.answer <= 3
           && d.timeTaken is number
           && d.timeTaken >= 0
           && d.score is int
@@ -35,7 +40,7 @@ service cloud.firestore {
           && d.isCorrect is bool
           && game().phase == 'question'
           && d.timeTaken >= serverElapsed() - 2
-          && d.isCorrect == (d.answer == question(d.questionId).correctAnswer)
+          && d.isCorrect == (d.answer == answerKey(d.questionId).correctAnswer)
           && (
                (d.isCorrect == false && d.score == 0)
                ||
@@ -46,28 +51,49 @@ service cloud.firestore {
     }
 
     // ─── meta/gameState ───────────────────────────────────────
-    // Public read. Anyone can create on first init (one-time bootstrap).
-    // Only authenticated admin can update phase, indices, settings, etc.
+    // Public read. One-time bootstrap is locked to initial values so an
+    // attacker who deletes the doc can't recreate it with malicious state.
+    // After bootstrap, only authenticated admin can update.
     match /meta/{doc} {
       allow read:   if true;
-      allow create: if true;
+      allow create: if request.resource.data.phase == 'waiting'
+                    && request.resource.data.currentQuestionIndex == 0
+                    && request.resource.data.questionStartTime == null;
       allow update: if request.auth != null;
       allow delete: if request.auth != null;
     }
 
     // ─── questions ────────────────────────────────────────────
-    // Public read; admin-only write.
+    // Public read; admin-only write. Question docs MUST NOT contain a
+    // `correctAnswer` field — it lives in /answerKeys/{id} so players
+    // cannot fetch all answers via DevTools before answering.
     match /questions/{id} {
       allow read:  if true;
+      allow write: if request.auth != null
+                   && !('correctAnswer' in request.resource.data);
+    }
+
+    // ─── answerKeys ───────────────────────────────────────────
+    // Holds {correctAnswer} per question, separate from the public question
+    // doc. Admin can always read/write. Public can read ONLY after the
+    // question phase ends, and only for questions at-or-before the current
+    // index — i.e., revealed answers are visible, future answers are not.
+    match /answerKeys/{id} {
+      allow read:  if request.auth != null
+                   || game().phase == 'ended'
+                   || (
+                        (game().phase == 'results' || game().phase == 'leaderboard')
+                        && question(id).order <= game().currentQuestionIndex
+                      );
       allow write: if request.auth != null;
     }
 
     // ─── players ──────────────────────────────────────────────
     // Anyone can join (create) with a 2-20 char name and score=0.
-    // Updates restricted to ONLY the `score` field, integer 0-5000.
-    // (Caveat: a malicious client can still inflate their own score within
-    // the cap without going through submitAnswer. Eliminating this fully
-    // requires Cloud Functions; documented in SECURITY.md.)
+    // Updates restricted to ONLY the `score` field, integer 0-5000, AND
+    // the per-write delta is capped at 30 (= max single-question score).
+    // This means a malicious client can still inflate, but only +30 per
+    // write — visible on the live leaderboard, killing drive-by cheating.
     match /players/{playerId} {
       allow read:   if true;
       allow create: if request.resource.data.name is string
@@ -77,7 +103,8 @@ service cloud.firestore {
       allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['score'])
                     && request.resource.data.score is int
                     && request.resource.data.score >= 0
-                    && request.resource.data.score <= 5000;
+                    && request.resource.data.score <= 5000
+                    && math.abs(request.resource.data.score - resource.data.score) <= 30;
       allow delete: if request.auth != null;
     }
 
@@ -85,9 +112,10 @@ service cloud.firestore {
     // Server-validated (see answerIsValid). Cheating attempts:
     //   - score=99999          → rejected (cap 30 + maxScoreFor)
     //   - timeTaken=0 always   → rejected (must be >= serverElapsed - 2)
-    //   - isCorrect=true lie   → rejected (must match actual correct answer)
+    //   - isCorrect=true lie   → rejected (must match actual correctAnswer)
     //   - submit after timer   → rejected (phase != 'question')
     //   - submit before quiz   → rejected (phase != 'question')
+    //   - answer index 99      → rejected (must be 0..3)
     match /answers/{answerId} {
       allow read:   if true;
       allow create: if answerIsValid(request.resource.data);

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { subscribeToPlayerAnswer } from '../../firebase/db';
+import { subscribeToPlayerAnswer, subscribeToAnswerKey } from '../../firebase/db';
 
 export default function AnswerResult({ question, playerId }) {
-  const [result,  setResult]  = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [result,    setResult]    = useState(null);
+  const [loading,   setLoading]   = useState(true);
+  const [answerKey, setAnswerKey] = useState(null);
 
   // Listen to the answer doc in real-time. Handles slow submissions:
   // even if the answer arrives 5s after results phase started, UI updates.
@@ -22,6 +23,14 @@ export default function AnswerResult({ question, playerId }) {
     return () => { unsub(); clearTimeout(t); };
   }, [question.id, playerId]);
 
+  // correctAnswer lives in /answerKeys/{id}, only readable in results phase.
+  useEffect(() => {
+    const unsub = subscribeToAnswerKey(question.id, (k) =>
+      setAnswerKey(k?.correctAnswer ?? null)
+    );
+    return unsub;
+  }, [question.id]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center
@@ -35,7 +44,7 @@ export default function AnswerResult({ question, playerId }) {
   const isCorrect  = result?.isCorrect ?? false;
   const score      = result?.score ?? 0;
   const chosen     = result?.answer ?? null;
-  const correct    = question.correctAnswer;
+  const correct    = answerKey;
   const LABELS     = ['A', 'B', 'C', 'D'];
 
   return (
@@ -99,7 +108,7 @@ export default function AnswerResult({ question, playerId }) {
         )}
 
         {/* Correct answer (if they got it wrong or didn't answer) */}
-        {(!isCorrect) && (
+        {!isCorrect && correct != null && (
           <div className="rounded-xl px-4 py-3 flex items-center gap-3
                           bg-green-500/15 border border-green-500/40">
             <span className="font-black text-sm w-6 text-center text-green-400">

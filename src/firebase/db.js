@@ -27,6 +27,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   query,
   where,
   orderBy,
@@ -39,11 +40,12 @@ import {
 import { db } from './config';
 
 // ─── Refs ─────────────────────────────────────────────────────
-const gameRef      = doc(db, 'meta', 'gameState');
-const questionsCol = () => collection(db, 'questions');
-const playersCol   = () => collection(db, 'players');
-const answersCol   = () => collection(db, 'answers');
-const sessionsCol  = () => collection(db, 'sessions');
+const gameRef        = doc(db, 'meta', 'gameState');
+const questionsCol   = () => collection(db, 'questions');
+const answerKeysCol  = () => collection(db, 'answerKeys');
+const playersCol     = () => collection(db, 'players');
+const answersCol     = () => collection(db, 'answers');
+const sessionsCol    = () => collection(db, 'sessions');
 
 // ─── Scoring ──────────────────────────────────────────────────
 export const calcScore = (isCorrect, timeTaken, timer) => {
@@ -129,15 +131,31 @@ export const resetGame = async () => {
 };
 
 // ─── Questions ────────────────────────────────────────────────
+// Public question docs hold text/options/timer/order — but NOT correctAnswer.
+// correctAnswer lives in /answerKeys/{questionId}, locked behind rules so
+// players can't fetch all answers via DevTools before answering.
 export const subscribeToQuestions = (cb) =>
   onSnapshot(
     query(questionsCol(), orderBy('order', 'asc')),
     (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
   );
 
+/** Admin-only: stream every {questionId: correctAnswer} for the editor UI. */
+export const subscribeToAnswerKeys = (cb) =>
+  onSnapshot(answerKeysCol(), (snap) => {
+    const map = {};
+    snap.docs.forEach((d) => { map[d.id] = d.data().correctAnswer; });
+    cb(map);
+  });
+
+/** Public read allowed only after question phase ends (rules-enforced). */
+export const subscribeToAnswerKey = (qId, cb) =>
+  onSnapshot(doc(db, 'answerKeys', qId), (s) =>
+    cb(s.exists() ? s.data() : null)
+  );
+
 export const addQuestion = async (q) => {
-  // Use a transaction so two admin tabs adding simultaneously can't both pick
-  // the same `order` value. Read max order, write new doc with order+1, atomically.
+  const { correctAnswer = 0, ...publicData } = q;
   const newRef = doc(questionsCol());
   await runTransaction(db, async (tx) => {
     const snap = await getDocs(
@@ -145,19 +163,33 @@ export const addQuestion = async (q) => {
     );
     const nextOrder = snap.empty ? 0 : snap.docs[0].data().order + 1;
     tx.set(newRef, {
-      ...q,
+      ...publicData,
       order: nextOrder,
       createdAt: serverTimestamp(),
     });
+    tx.set(doc(db, 'answerKeys', newRef.id), { correctAnswer });
   });
   return newRef;
 };
 
-export const updateQuestion = (id, data) =>
-  updateDoc(doc(db, 'questions', id), data);
+export const updateQuestion = async (id, data) => {
+  const { correctAnswer, ...publicData } = data;
+  const batch = writeBatch(db);
+  if (Object.keys(publicData).length) {
+    batch.update(doc(db, 'questions', id), publicData);
+  }
+  if (correctAnswer !== undefined) {
+    batch.set(doc(db, 'answerKeys', id), { correctAnswer }, { merge: true });
+  }
+  return batch.commit();
+};
 
-export const deleteQuestion = (id) =>
-  deleteDoc(doc(db, 'questions', id));
+export const deleteQuestion = async (id) => {
+  const batch = writeBatch(db);
+  batch.delete(doc(db, 'questions', id));
+  batch.delete(doc(db, 'answerKeys', id));
+  return batch.commit();
+};
 
 export const reorderQuestions = async (orderedIds) => {
   const batch = writeBatch(db);
@@ -165,6 +197,25 @@ export const reorderQuestions = async (orderedIds) => {
     batch.update(doc(db, 'questions', id), { order: idx })
   );
   return batch.commit();
+};
+
+/**
+ * One-shot migration for pre-split question docs that still have the
+ * `correctAnswer` field embedded. Moves it to /answerKeys and strips
+ * the field from the public question doc. Idempotent — does nothing
+ * once all questions are clean. Admin-only (writes to both collections).
+ */
+export const migrateAnswerKeys = async () => {
+  const snap = await getDocs(questionsCol());
+  const dirty = snap.docs.filter((d) => 'correctAnswer' in d.data());
+  if (!dirty.length) return 0;
+  const batch = writeBatch(db);
+  for (const d of dirty) {
+    batch.set(doc(db, 'answerKeys', d.id), { correctAnswer: d.data().correctAnswer }, { merge: true });
+    batch.update(doc(db, 'questions', d.id), { correctAnswer: deleteField() });
+  }
+  await batch.commit();
+  return dirty.length;
 };
 
 // ─── Players ──────────────────────────────────────────────────
@@ -215,50 +266,58 @@ export const getPlayer = (id) =>
 // ─── Answers ──────────────────────────────────────────────────
 /**
  * Re-submission safe: subtracts previous score, adds new score.
- * Pass `timer` so scoring is proportional regardless of question timer.
+ *
+ * Two-attempt pattern: client doesn't know correctAnswer (it's hidden in
+ * /answerKeys, locked behind rules during 'question' phase). So we
+ * optimistically submit isCorrect=true with the max-for-time score. If
+ * Firestore rules reject (player guessed wrong), we retry with
+ * isCorrect=false, score=0. Either way, the server is the source of truth.
  */
+const PERMISSION_DENIED = (e) =>
+  e?.code === 'permission-denied' || e?.code === 'PERMISSION_DENIED';
+
+const writeAnswerTx = (answerRef, playerRef, payload) =>
+  runTransaction(db, async (tx) => {
+    const [answerSnap, playerSnap] = await Promise.all([
+      tx.get(answerRef),
+      tx.get(playerRef),
+    ]);
+    const oldScore = answerSnap.exists() ? (answerSnap.data().score || 0) : 0;
+    tx.set(answerRef, { ...payload, timestamp: serverTimestamp() });
+    if (playerSnap.exists()) {
+      const current = playerSnap.data().score || 0;
+      tx.update(playerRef, {
+        score: Math.max(0, current - oldScore + payload.score),
+      });
+    }
+  });
+
 export const submitAnswer = async ({
   questionId,
   playerId,
   answer,
   timeTaken,
-  correctAnswer,
   timer = 15,
 }) => {
-  const isCorrect = answer === correctAnswer;
-  const score     = calcScore(isCorrect, timeTaken, timer);
-  const answerId  = `${questionId}_${playerId}`;
-  const answerRef = doc(db, 'answers', answerId);
+  const answerRef = doc(db, 'answers', `${questionId}_${playerId}`);
   const playerRef = doc(db, 'players', playerId);
+  const optimisticScore = calcScore(true, timeTaken, timer);
 
-  // Single atomic transaction: read both docs, write both docs.
-  // Eliminates the bug where setDoc succeeds but score transaction fails,
-  // leaving answer saved but score never updated.
-  await runTransaction(db, async (tx) => {
-    const [answerSnap, playerSnap] = await Promise.all([
-      tx.get(answerRef),
-      tx.get(playerRef),
-    ]);
-
-    const oldScore = answerSnap.exists() ? (answerSnap.data().score || 0) : 0;
-
-    tx.set(answerRef, {
-      questionId,
-      playerId,
-      answer,
-      timeTaken,
-      score,
-      isCorrect,
-      timestamp: serverTimestamp(),
+  try {
+    await writeAnswerTx(answerRef, playerRef, {
+      questionId, playerId, answer, timeTaken,
+      score: optimisticScore, isCorrect: true,
     });
-
-    if (playerSnap.exists()) {
-      const current = playerSnap.data().score || 0;
-      tx.update(playerRef, { score: Math.max(0, current - oldScore + score) });
-    }
-  });
-
-  return score;
+    return optimisticScore;
+  } catch (e) {
+    if (!PERMISSION_DENIED(e)) throw e;
+    // Rule rejected the optimistic write → answer was wrong.
+    await writeAnswerTx(answerRef, playerRef, {
+      questionId, playerId, answer, timeTaken,
+      score: 0, isCorrect: false,
+    });
+    return 0;
+  }
 };
 
 export const getPlayerAnswer = (questionId, playerId) =>

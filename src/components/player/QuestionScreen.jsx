@@ -58,12 +58,11 @@ export default function QuestionScreen({ question, playerId, questionStartTime, 
 
     try {
       await submitAnswer({
-        questionId:    question.id,
+        questionId: question.id,
         playerId,
-        answer:        idx,
+        answer:     idx,
         timeTaken,
-        correctAnswer: question.correctAnswer,
-        timer:         totalTime,
+        timer:      totalTime,
       });
     } catch (e) {
       console.error(e);
