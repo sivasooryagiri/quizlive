@@ -81,7 +81,7 @@ vercel
 ```
 
 In the Vercel dashboard → **Settings → Environment Variables**, add all
-`VITE_FIREBASE_*` variables and `VITE_ADMIN_PASSWORD`.
+`VITE_FIREBASE_*` variables, `VITE_ADMIN_EMAIL`, and `VITE_ADMIN_PASSWORD`.
 
 Then update `VITE_JOIN_URL` to your Vercel deployment URL and redeploy:
 ```bash
@@ -153,4 +153,4 @@ score = correct ? max(100, 1000 - floor(timeTaken) * 50) : 0
 | Default timer | Question editor in admin |
 | Background gradient | Each page's `bg-gradient-to-br` class |
 | Game title | Admin → Host/QR tab |
-| Admin password | `.env` → `VITE_ADMIN_PASSWORD` |
+| Admin login | Firebase Auth user → email in `VITE_ADMIN_EMAIL`, password in `VITE_ADMIN_PASSWORD` |

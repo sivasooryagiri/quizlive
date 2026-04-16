@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from '../firebase/config';
 import useGameState    from '../hooks/useGameState';
-import { subscribeToQuestions, subscribeToPlayers } from '../firebase/db';
+import { subscribeToQuestions, subscribeToPlayers, saveSession } from '../firebase/db';
 import LoginScreen     from '../components/admin/LoginScreen';
 import QuestionEditor  from '../components/admin/QuestionEditor';
 import GameControl     from '../components/admin/GameControl';
@@ -37,11 +39,21 @@ function AboutCorner() {
 }
 
 export default function AdminPage() {
-  const [authed, setAuthed]       = useState(() => sessionStorage.getItem('ql_admin') === '1');
-  const [tab,    setTab]          = useState('game');
-  const [questions, setQuestions] = useState([]);
-  const [players,   setPlayers]   = useState([]);
-  const { gameState, loading }    = useGameState();
+  const [authed,      setAuthed]      = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [tab,         setTab]         = useState('game');
+  const [questions,   setQuestions]   = useState([]);
+  const [players,     setPlayers]     = useState([]);
+  const { gameState, loading }        = useGameState();
+  const sessionSaving                 = useRef(false);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setAuthed(!!user);
+      setAuthLoading(false);
+    });
+    return unsub;
+  }, []);
 
   useEffect(() => {
     if (!authed) return;
@@ -50,8 +62,22 @@ export default function AdminPage() {
     return () => { u1(); u2(); };
   }, [authed]);
 
-  if (!authed) return <LoginScreen onLogin={() => setAuthed(true)} />;
-  if (loading)  return <LoadingSpinner />;
+  // Save session when quiz ends — admin is authenticated so this write is allowed.
+  useEffect(() => {
+    if (!authed || !gameState || gameState.phase !== 'ended') return;
+    if (gameState.sessionSaved || sessionSaving.current) return;
+    sessionSaving.current = true;
+    saveSession(gameState).catch(console.error);
+  }, [authed, gameState?.phase, gameState?.sessionSaved]);
+
+  // Reset saving guard when a new quiz starts.
+  useEffect(() => {
+    if (gameState?.phase === 'waiting') sessionSaving.current = false;
+  }, [gameState?.phase]);
+
+  if (authLoading) return <LoadingSpinner />;
+  if (!authed)     return <LoginScreen onLogin={() => {}} />;
+  if (loading)     return <LoadingSpinner />;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f0a1e] via-[#1a0a2e] to-[#0a1628]">
@@ -69,7 +95,7 @@ export default function AdminPage() {
             {players.length} player{players.length !== 1 ? 's' : ''} · {questions.length} Q
           </div>
           <button
-            onClick={() => { sessionStorage.removeItem('ql_admin'); setAuthed(false); }}
+            onClick={() => signOut(auth)}
             className="text-xs text-white/30 hover:text-white/60 transition-colors"
           >
             Logout

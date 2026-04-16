@@ -1,19 +1,30 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../firebase/config';
 
 export default function LoginScreen({ onLogin }) {
   const [password, setPassword] = useState('');
   const [error,    setError]    = useState('');
+  const [busy,     setBusy]     = useState(false);
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    const expected = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123';
-    if (password === expected) {
-      sessionStorage.setItem('ql_admin', '1');
+    const email = import.meta.env.VITE_ADMIN_EMAIL;
+    if (!email) {
+      setError('VITE_ADMIN_EMAIL is not set in .env');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
       onLogin();
-    } else {
+    } catch {
       setError('Incorrect password.');
       setPassword('');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -44,11 +55,13 @@ export default function LoginScreen({ onLogin }) {
           {error && <p className="text-red-400 text-sm">{error}</p>}
           <button
             type="submit"
+            disabled={busy}
             className="w-full py-3 rounded-xl font-black text-white
                        bg-gradient-to-r from-brand-600 to-purple-600
-                       hover:from-brand-500 hover:to-purple-500 transition-all"
+                       hover:from-brand-500 hover:to-purple-500 transition-all
+                       disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Login →
+            {busy ? 'Signing in…' : 'Login →'}
           </button>
         </form>
       </motion.div>

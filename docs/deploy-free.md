@@ -43,6 +43,12 @@ Firebase handles the real-time database, Vercel serves the frontend.
 2. Select **Start in test mode** → Next
 3. Pick a region close to your users → Done
 
+**Enable Authentication:**
+1. Left sidebar → **Authentication → Get started**
+2. Click **Email/Password** → Enable → Save
+3. Go to **Users → Add user** → enter an email and a strong password
+4. These go into Vercel as `VITE_ADMIN_EMAIL` and `VITE_ADMIN_PASSWORD` in Step 4
+
 ---
 
 ## Step 2 — Deploy Firestore security rules
@@ -65,7 +71,7 @@ This deploys the `firestore.rules` file already in the repo.
 If not already:
 
 ```bash
-git remote add origin https://github.com/yourusername/quiz-live.git
+git remote add origin https://github.com/yourusername/quizlive.git
 git push -u origin main
 ```
 
@@ -86,19 +92,20 @@ git push -u origin main
 | `VITE_FIREBASE_STORAGE_BUCKET` | `your-project.appspot.com` |
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | from Firebase config |
 | `VITE_FIREBASE_APP_ID` | from Firebase config |
-| `VITE_ADMIN_PASSWORD` | choose a strong password |
+| `VITE_ADMIN_EMAIL` | the email you created in Firebase Auth |
+| `VITE_ADMIN_PASSWORD` | the password you set in Firebase Auth |
 | `VITE_JOIN_URL` | leave blank for now (fill after first deploy) |
 
 5. Click **Deploy**
 
-Vercel will build and give you a URL like `https://quiz-live-abc123.vercel.app`
+Vercel will build and give you a URL like `https://quizlive-abc123.vercel.app`
 
 ---
 
 ## Step 5 — Set the join URL
 
 1. In Vercel dashboard → your project → **Settings → Environment Variables**
-2. Edit `VITE_JOIN_URL` → set it to your Vercel URL: `https://quiz-live-abc123.vercel.app`
+2. Edit `VITE_JOIN_URL` → set it to your Vercel URL: `https://quizlive-abc123.vercel.app`
 3. Go to **Deployments → Redeploy** (top deployment → three dots → Redeploy)
 
 The QR code on the host screen now points to your live URL.

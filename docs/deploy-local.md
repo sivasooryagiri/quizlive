@@ -31,7 +31,17 @@ npm install
 
 ---
 
-## Step 3 — Set up Firestore
+## Step 3 — Enable Firebase Authentication
+
+1. In Firebase console → **Authentication → Get started**
+2. Click **Email/Password** → Enable → Save
+3. Go to **Users → Add user**
+4. Enter any email (e.g. `admin@quiz.local`) and a strong password
+5. These go into your `.env` as `VITE_ADMIN_EMAIL` and `VITE_ADMIN_PASSWORD`
+
+---
+
+## Step 4 — Set up Firestore
 
 1. In Firebase console → **Firestore Database → Create database**
 2. Choose **Start in test mode** (you can tighten rules later)
@@ -39,7 +49,7 @@ npm install
 
 ---
 
-## Step 4 — Configure environment
+## Step 5 — Configure environment
 
 ```bash
 cp .env.example .env
@@ -55,13 +65,14 @@ VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=000000000000
 VITE_FIREBASE_APP_ID=1:000000000000:web:xxxx
 
-VITE_ADMIN_PASSWORD=your_secure_password
+VITE_ADMIN_EMAIL=the_email_you_created_in_firebase
+VITE_ADMIN_PASSWORD=the_password_you_set_in_firebase
 VITE_JOIN_URL=http://localhost:5173
 ```
 
 ---
 
-## Step 5 — Run the app
+## Step 6 — Run the app
 
 ```bash
 npm run dev
@@ -125,8 +136,7 @@ Players on the same network scan the QR or open `http://192.168.1.42:5173` on th
 
 ## Firestore security rules
 
-For private/internal use the default test mode rules are fine.  
-If you want to tighten them, deploy `firestore.rules` from the repo:
+Deploy the rules from the repo to lock down the database:
 
 ```bash
 npm install -g firebase-tools

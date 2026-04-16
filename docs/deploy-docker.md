@@ -21,7 +21,16 @@ cd quizlive
 
 ---
 
-## Step 2 — Configure environment
+## Step 2 — Enable Firebase Authentication
+
+1. In Firebase console → **Authentication → Get started**
+2. Click **Email/Password** → Enable → Save
+3. Go to **Users → Add user** → enter an email and a strong password
+4. These go into `.env` as `VITE_ADMIN_EMAIL` and `VITE_ADMIN_PASSWORD`
+
+---
+
+## Step 3 — Configure environment
 
 ```bash
 cp .env.example .env
@@ -37,7 +46,8 @@ VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=000000000000
 VITE_FIREBASE_APP_ID=1:000000000000:web:xxxx
 
-VITE_ADMIN_PASSWORD=your_secure_password
+VITE_ADMIN_EMAIL=the_email_you_created_in_firebase
+VITE_ADMIN_PASSWORD=the_password_you_set_in_firebase
 VITE_JOIN_URL=http://localhost:3000
 ```
 
@@ -45,7 +55,7 @@ VITE_JOIN_URL=http://localhost:3000
 
 ---
 
-## Step 3 — Build the image
+## Step 4 — Build the image
 
 ```bash
 docker build -t quizlive .
@@ -55,7 +65,7 @@ This compiles the app into a production build inside the container.
 
 ---
 
-## Step 4 — Run the container
+## Step 5 — Run the container
 
 ```bash
 docker run -p 3000:3000 --env-file .env quizlive

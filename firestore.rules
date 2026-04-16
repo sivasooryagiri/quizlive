@@ -2,37 +2,43 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Game state — anyone can read, no one writes from client
-    // (writes happen via SDK in admin/host only — add auth checks for production)
+    // Game state — anyone can read (players, host all need this).
+    // Writes open so host screen can auto-advance timer from the projector.
     match /meta/{doc} {
       allow read: if true;
-      allow write: if true;   // Tighten in production: if request.auth != null
+      allow write: if true;
     }
 
-    // Questions — public read, admin-only write
+    // Questions — public read, admin-only write.
+    // Prevents players from deleting or editing questions.
     match /questions/{id} {
       allow read: if true;
-      allow write: if true;   // Tighten: if request.auth != null
+      allow write: if request.auth != null;
     }
 
-    // Players — anyone can create their own doc, read all
+    // Players — anyone can join (create) and scores update during game.
+    // Only authenticated admin can delete (used during reset).
     match /players/{playerId} {
-      allow read: if true;
+      allow read:   if true;
       allow create: if true;
-      allow update: if true;  // Score updates happen transactionally
-      allow delete: if true;  // Needed for reset
+      allow update: if true;
+      allow delete: if request.auth != null;
     }
 
-    // Answers — anyone can write their own, read all (for results aggregation)
+    // Answers — anyone can submit their own answer.
+    // Only authenticated admin can delete (used during reset).
     match /answers/{answerId} {
-      allow read: if true;
-      allow write: if true;
+      allow read:   if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if request.auth != null;
     }
 
-    // Sessions — written by host on quiz end, read by admin
+    // Sessions — written by admin after quiz ends, read by admin history panel.
+    // Fully protected — players cannot tamper with past results.
     match /sessions/{sessionId} {
-      allow read: if true;
-      allow write: if true;
+      allow read:  if true;
+      allow write: if request.auth != null;
     }
   }
 }

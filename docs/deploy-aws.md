@@ -60,7 +60,16 @@ npm -v
 
 ---
 
-## Step 4 — Clone and build the app
+## Step 4 — Enable Firebase Authentication
+
+1. In Firebase console → **Authentication → Get started**
+2. Click **Email/Password** → Enable → Save
+3. Go to **Users → Add user** → enter an email and strong password
+4. These go into your `.env` as `VITE_ADMIN_EMAIL` and `VITE_ADMIN_PASSWORD`
+
+---
+
+## Step 5 — Clone and build the app
 
 ```bash
 git clone https://github.com/sivasooryagiri/quizlive.git
@@ -70,7 +79,7 @@ npm install
 
 ---
 
-## Step 5 — Configure environment
+## Step 6 — Configure environment
 
 ```bash
 cp .env.example .env
@@ -87,7 +96,8 @@ VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=000000000000
 VITE_FIREBASE_APP_ID=1:000000000000:web:xxxx
 
-VITE_ADMIN_PASSWORD=your_secure_password
+VITE_ADMIN_EMAIL=the_email_you_created_in_firebase
+VITE_ADMIN_PASSWORD=the_password_you_set_in_firebase
 VITE_JOIN_URL=http://<your-ec2-public-ip>:3000
 ```
 
@@ -95,7 +105,7 @@ Save: `Ctrl+O`, `Enter`, `Ctrl+X`
 
 ---
 
-## Step 6 — Build the app
+## Step 7 — Build the app
 
 ```bash
 npm run build
@@ -105,7 +115,7 @@ This creates a `dist/` folder with the static files.
 
 ---
 
-## Step 7 — Serve with a simple HTTP server
+## Step 8 — Serve with a simple HTTP server
 
 Install `serve`:
 
@@ -127,7 +137,7 @@ App is now live at `http://<your-ec2-public-ip>:3000`
 
 ---
 
-## Step 8 — Keep it running after you close SSH (PM2)
+## Step 9 — Keep it running after you close SSH (PM2)
 
 ```bash
 sudo npm install -g pm2
