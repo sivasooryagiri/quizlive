@@ -15,6 +15,7 @@ export default function QuestionScreen({ question, playerId, questionStartTime, 
   const [selected,  setSelected]  = useState(null);
   const [submitting,setSubmitting]= useState(false);
   const [expired,   setExpired]   = useState(false);
+  const [submitErr, setSubmitErr] = useState(null);
   const expiredRef  = useRef(false);
 
   // Reset on new question
@@ -22,6 +23,7 @@ export default function QuestionScreen({ question, playerId, questionStartTime, 
     setTimeLeft(totalTime);
     setSelected(null);
     setExpired(false);
+    setSubmitErr(null);
     expiredRef.current = false;
   }, [question.id, totalTime]);
 
@@ -50,6 +52,7 @@ export default function QuestionScreen({ question, playerId, questionStartTime, 
     if (submitting || expired || selected === idx) return;
     setSelected(idx);
     setSubmitting(true);
+    setSubmitErr(null);
 
     const startMs =
       questionStartTime?.toMillis?.() ??
@@ -65,8 +68,11 @@ export default function QuestionScreen({ question, playerId, questionStartTime, 
         timer:      totalTime,
       });
     } catch (e) {
-      console.error(e);
-      setSelected(null);
+      console.error('submitAnswer failed:', e);
+      const code = e?.code || e?.cause?.code || 'unknown';
+      setSubmitErr(`Couldn't save your answer (${code}). Tap to retry.`);
+      // Keep `selected` so the player still sees what they picked,
+      // but unblock the buttons so they can tap again to retry.
     } finally {
       setSubmitting(false);
     }
@@ -163,6 +169,18 @@ export default function QuestionScreen({ question, playerId, questionStartTime, 
 
         {/* Bottom status — NO score or correct answer shown */}
         <AnimatePresence mode="wait">
+          {submitErr && !expired && (
+            <motion.div
+              key="submit-err"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="text-center rounded-xl p-3 bg-red-500/20 border
+                         border-red-500/40 text-red-200 text-xs font-medium"
+            >
+              {submitErr}
+            </motion.div>
+          )}
           {expired && selected === null && (
             <motion.div
               key="no-answer"
