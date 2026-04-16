@@ -8,6 +8,13 @@ export default function HostControl({ gameState }) {
   const [joinUrl,  setJoinUrl]  = useState(gameState?.joinUrl ?? window.location.origin);
   const [saving,   setSaving]   = useState(false);
   const [saved,    setSaved]    = useState(false);
+  const [copied,   setCopied]   = useState(false);
+
+  const copyUrl = () => {
+    navigator.clipboard.writeText(joinUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const save = async () => {
     setSaving(true);
@@ -88,6 +95,13 @@ export default function HostControl({ gameState }) {
           />
         </div>
         <p className="text-brand-300 text-sm font-medium">{joinUrl}</p>
+        <button
+          onClick={copyUrl}
+          className="w-full py-2 rounded-xl glass border border-white/10 text-xs font-semibold
+                     text-white/50 hover:text-white hover:border-white/20 transition-all"
+        >
+          {copied ? '✓ Copied!' : 'Copy Join URL'}
+        </button>
       </div>
     </div>
   );

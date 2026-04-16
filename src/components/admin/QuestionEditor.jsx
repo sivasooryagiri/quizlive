@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { addQuestion, updateQuestion, deleteQuestion } from '../../firebase/db';
+import { addQuestion, updateQuestion, deleteQuestion, reorderQuestions } from '../../firebase/db';
 
 const BLANK = {
   text:          '',
   options:       ['', '', '', ''],
   correctAnswer: 0,
-  timer:         15,          // default 15 seconds
+  timer:         15,
 };
 
 function QuestionForm({ initial = BLANK, onSave, onCancel, saving }) {
@@ -87,7 +87,6 @@ function QuestionForm({ initial = BLANK, onSave, onCancel, saving }) {
           </div>
         </div>
 
-        {/* Quick timer presets */}
         <div className="flex gap-1 pb-0.5">
           {[10, 15, 20, 30].map((t) => (
             <button
@@ -121,22 +120,19 @@ function QuestionForm({ initial = BLANK, onSave, onCancel, saving }) {
 }
 
 export default function QuestionEditor({ questions }) {
-  const [editing,  setEditing]  = useState(null);
-  const [saving,   setSaving]   = useState(false);
-  const [deleting, setDeleting] = useState(null);
+  const [editing,   setEditing]   = useState(null);
+  const [saving,    setSaving]    = useState(false);
+  const [deleting,  setDeleting]  = useState(null);
+  const [dragOver,  setDragOver]  = useState(null);
+  const dragIdx = useRef(null);
 
   const handleSave = async (q) => {
     setSaving(true);
     try {
-      if (editing === 'new') {
-        await addQuestion(q);
-      } else {
-        await updateQuestion(editing, q);
-      }
+      if (editing === 'new') await addQuestion(q);
+      else                   await updateQuestion(editing, q);
       setEditing(null);
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
   const handleDelete = async (id) => {
@@ -146,9 +142,23 @@ export default function QuestionEditor({ questions }) {
     finally { setDeleting(null); }
   };
 
+  const onDragStart = (idx) => { dragIdx.current = idx; };
+  const onDragOver  = (e, idx) => { e.preventDefault(); setDragOver(idx); };
+  const onDragEnd   = () => { dragIdx.current = null; setDragOver(null); };
+
+  const onDrop = async (e, dropIdx) => {
+    e.preventDefault();
+    const from = dragIdx.current;
+    if (from === null || from === dropIdx) { setDragOver(null); return; }
+    const reordered = [...questions];
+    const [moved]   = reordered.splice(from, 1);
+    reordered.splice(dropIdx, 0, moved);
+    setDragOver(null);
+    await reorderQuestions(reordered.map((q) => q.id));
+  };
+
   return (
     <div className="space-y-4">
-      {/* Add button */}
       {editing !== 'new' && (
         <button
           onClick={() => setEditing('new')}
@@ -181,9 +191,23 @@ export default function QuestionEditor({ questions }) {
         <p className="text-center text-white/30 py-8">No questions yet. Add one above.</p>
       )}
 
+      {questions.length > 1 && (
+        <p className="text-white/20 text-xs text-center">Drag ⠿ to reorder</p>
+      )}
+
       <div className="space-y-3">
         {questions.map((q, idx) => (
-          <motion.div key={q.id} layout className="glass rounded-2xl p-4">
+          <motion.div
+            key={q.id}
+            layout
+            draggable={editing !== q.id}
+            onDragStart={() => onDragStart(idx)}
+            onDragOver={(e) => onDragOver(e, idx)}
+            onDrop={(e) => onDrop(e, idx)}
+            onDragEnd={onDragEnd}
+            className={`glass rounded-2xl p-4 transition-all
+              ${dragOver === idx ? 'ring-2 ring-brand-400/60 bg-white/5' : ''}`}
+          >
             {editing === q.id ? (
               <QuestionForm
                 initial={q}
@@ -193,10 +217,16 @@ export default function QuestionEditor({ questions }) {
               />
             ) : (
               <div className="flex items-start gap-3">
+                {/* Drag handle */}
+                <span className="text-white/20 cursor-grab active:cursor-grabbing text-lg select-none shrink-0 mt-1">
+                  ⠿
+                </span>
+
                 <span className="glass rounded-lg w-8 h-8 flex items-center justify-center
                                  text-sm font-black text-brand-300 shrink-0 mt-0.5">
                   {idx + 1}
                 </span>
+
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-semibold text-sm">{q.text}</p>
                   <div className="flex flex-wrap gap-1.5 mt-2">
@@ -213,10 +243,9 @@ export default function QuestionEditor({ questions }) {
                       </span>
                     ))}
                   </div>
-                  <p className="text-white/30 text-xs mt-1.5">⏱ {q.timer ?? 15}s · max {
-                    Math.round(30 - 0)
-                  } pts</p>
+                  <p className="text-white/30 text-xs mt-1.5">⏱ {q.timer ?? 15}s · max 30 pts</p>
                 </div>
+
                 <div className="flex gap-2 shrink-0">
                   <button
                     onClick={() => setEditing(q.id)}

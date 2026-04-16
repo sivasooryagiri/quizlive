@@ -63,6 +63,8 @@ export default function PlayerPage() {
               question={currentQ}
               playerId={playerId}
               questionStartTime={gameState.questionStartTime}
+              questionIndex={gameState.currentQuestionIndex}
+              totalQuestions={questions.length}
               onAnswered={() => {}}
             />
           </motion.div>

@@ -9,7 +9,7 @@ const OPTION_STYLES = [
   { bg: 'from-amber-500  to-orange-600', border: 'border-amber-400',  label: 'D' },
 ];
 
-export default function QuestionScreen({ question, playerId, questionStartTime }) {
+export default function QuestionScreen({ question, playerId, questionStartTime, questionIndex, totalQuestions }) {
   const totalTime   = question.timer ?? 15;
   const [timeLeft,  setTimeLeft]  = useState(totalTime);
   const [selected,  setSelected]  = useState(null);
@@ -89,11 +89,16 @@ export default function QuestionScreen({ question, playerId, questionStartTime }
       <div className="flex-1 flex flex-col px-4 py-4 gap-3">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <span className="text-brand-300 text-sm font-semibold">
-            {expired
-              ? selected !== null ? '🔒 Locked in' : '⏰ Time\'s up'
-              : selected !== null ? '✏️ Tap to change' : 'Pick your answer'}
-          </span>
+          <div className="flex flex-col">
+            <span className="text-white/30 text-xs font-semibold tabular-nums">
+              {questionIndex != null ? `Q ${questionIndex + 1} / ${totalQuestions}` : ''}
+            </span>
+            <span className="text-brand-300 text-sm font-semibold">
+              {expired
+                ? selected !== null ? '🔒 Locked in' : '⏰ Time\'s up'
+                : selected !== null ? 'Answer selected' : 'Pick your answer'}
+            </span>
+          </div>
           <motion.div
             key={Math.ceil(timeLeft)}
             initial={{ scale: 1.15 }}
