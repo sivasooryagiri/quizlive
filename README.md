@@ -1,93 +1,145 @@
-# QuizLive
+# 🎯 QuizLive
 
-A free, open-source, real-time multiplayer quiz app — think Kahoot or Slido, but fully in your control.
+**Free. Open source. Fully yours.**
 
-Run it on your laptop for a room full of people, share it on your office network, or deploy it to the cloud. No subscriptions. No paywalls. No limits you didn't set yourself.
+A real-time multiplayer quiz app — like Kahoot or Slido, but without the paywall, the account wall, or the vendor deciding what you can do with it. Run it on a laptop, share it over Wi-Fi, or deploy it to the cloud. Your call.
 
-Built by [deadtechguy.fun](https://deadtechguy.fun)
-
----
-
-## What it does
-
-- Players join from their phones by scanning a QR code or visiting a URL
-- Host screen shows questions and a live answer bar chart on the projector
-- Admin panel lets you add questions, control the game flow, and reset between sessions
-- Real-time scoring — faster correct answers score more points
-- Leaderboard with podium after each question and at the end
+![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-Firestore-ff6f00?style=flat-square&logo=firebase&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-5-646cff?style=flat-square&logo=vite&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-3-38bdf8?style=flat-square&logo=tailwindcss&logoColor=white)
+![License](https://img.shields.io/badge/License-Non--Commercial-red?style=flat-square)
 
 ---
 
-## Screenshots
+## ✨ What it does
 
-_Screenshots coming soon._
-
----
-
-## Tech stack
-
-- **Frontend:** React 18 + Vite + Tailwind CSS + Framer Motion
-- **Database:** Firebase Firestore (real-time)
-- **Hosting:** Vercel (or self-hosted — your choice)
+- 📱 Players join from their phones — scan a QR or visit a URL, no account needed
+- 🖥️ Host screen runs on the projector — live answer chart, timer, leaderboard podium
+- 🎛️ Admin panel controls everything — questions, game flow, QR toggle, session history
+- ⚡ Scores are time-weighted — faster correct answers earn more
+- 📋 Full session history saved automatically — download any past leaderboard as CSV
+- 🌐 Works offline on a local network — no internet required
 
 ---
 
-## How to run it
+## 📸 Screenshots
+
+_Coming soon._
+
+---
+
+## 🚀 Getting Started
 
 Pick the setup that fits your situation:
 
-### [Local machine + private network](docs/deploy-local.md)
-Run on your laptop and share with everyone on the same Wi-Fi. Best for classrooms, offices, or events where you control the network. No internet required.
-
-### [AWS EC2 — public internet](docs/deploy-aws.md)
-Host on a public IP using AWS free tier. Anyone with the link can join from anywhere. Good for remote events or public quizzes.
-
-### [Firebase + Vercel — free cloud hosting](docs/deploy-free.md)
-The easiest path to a live public URL at $0 cost. Handles 80–100 simultaneous players on the free tier (Spark plan allows 100 concurrent Firestore connections). Questions and total player count are unlimited — the only real ceiling is concurrent active connections.
+| Method | Best for | Cost |
+|--------|----------|------|
+| [🏠 Local + Private Network](docs/deploy-local.md) | Classroom, office, events on same Wi-Fi | Free |
+| [☁️ AWS EC2](docs/deploy-aws.md) | Public quiz, anyone can join from anywhere | Free tier |
+| [🔥 Firebase + Vercel](docs/deploy-free.md) | Easiest cloud setup, 80–100 players | Free |
+| [🐳 Docker](#docker) | Self-hosted, clean environment | Free |
 
 ---
 
-## Quick start (localhost)
+### ⚡ Quickstart (localhost)
 
 ```bash
 git clone https://github.com/sivasooryagiri/quiz-live.git
 cd quiz-live
 npm install
 cp .env.example .env
-# fill in your Firebase config in .env
+# fill in your Firebase config
 npm run dev
 ```
 
 Open `http://localhost:5173`
 
-See [docs/deploy-local.md](docs/deploy-local.md) for the full setup including Firebase project creation.
+> Full Firebase setup guide → [docs/deploy-local.md](docs/deploy-local.md)
 
 ---
 
-## Pages
+### 🐳 Docker
 
-| Path | Who uses it |
-|------|-------------|
-| `/` | Players — join and answer on their phones |
-| `/host` | Host — projector/big screen display |
-| `/admin` | Admin — add questions, control game, reset |
+```bash
+git clone https://github.com/sivasooryagiri/quiz-live.git
+cd quiz-live
+cp .env.example .env
+# fill in your Firebase config in .env
 
----
+docker build -t quizlive .
+docker run -p 3000:3000 --env-file .env quizlive
+```
 
-## License & use
-
-This project is open source and free to use, modify, and self-host.
-
-**It is not to be used for commercial or monetary purposes.** Do not sell access to it, charge players, bundle it into a paid product, or use it as a revenue-generating service. It was built to make quizzes free and accessible — keep it that way.
-
-Personal use, educational use, internal company events, community events — all fine.
+Open `http://localhost:3000`
 
 ---
 
-## About
+## 🗺️ Pages
 
-Built for fun when a friend couldn't find a quiz app that was actually free and usable.
+| Path | Who | Purpose |
+|------|-----|---------|
+| `/` | Players | Join and answer on their phones |
+| `/host` | Projector | Live question display, timer, leaderboard |
+| `/admin` | You | Questions, game control, history, QR toggle |
+| `/about` | Anyone | About the project and builder |
 
-The whole point is that you decide how to run it — local, private network, or public cloud. Simple UI, quick to set up, works for any audience.
+---
 
-Builder: [deadtechguy.fun](https://deadtechguy.fun)
+## 👥 Capacity
+
+| Plan | Concurrent players | Cost |
+|------|--------------------|------|
+| Firebase Spark (free) | 80–100 | $0 |
+| Firebase Blaze (pay-as-you-go) | 500+ | ~$0.01 per session |
+
+Firestore Spark allows 100 simultaneous connections. Reads/writes are well within daily free limits for typical quiz sessions.
+
+---
+
+## 🛠️ Tech stack
+
+- **Frontend** — React 18, Vite, Tailwind CSS, Framer Motion
+- **Database** — Firebase Firestore (real-time listeners)
+- **Auth** — Password-protected admin (env var), no player accounts
+- **Hosting** — Vercel (or self-hosted)
+- **Charts** — Recharts (answer bar chart)
+- **QR** — qrcode.react
+
+---
+
+## ⚖️ License & use
+
+Open source. Free to use, modify, and self-host.
+
+**Not for commercial or monetary use.** Do not sell access, charge players, bundle into a paid product, or use as a revenue-generating service. Built to make quizzes free and accessible — keep it that way.
+
+Personal use, education, internal events, community quizzes — all fine.
+
+---
+
+## 🗓️ Roadmap
+
+Things planned or worth building next:
+
+**🎨 Presentation themes**
+Multiple visual themes for the host/projector screen — dark, light, high-contrast, branded. Selectable per session from the admin panel.
+
+**💬 Room mood / word cloud**
+Players type any word during a session. Words appear as floating bubbles on the host screen — the more a word is typed, the bigger its bubble. A lightweight way to feel the room before or between questions.
+
+**More ideas worth adding**
+- [ ] 🖼️ Image questions — attach an image to a question
+- [ ] 👥 Team mode — group players into teams, score aggregated
+- [ ] 🔢 Custom scoring — let admin set points per question
+- [ ] ⏱️ Timed lobby — auto-start after countdown
+- [ ] 📥 Question import — paste a JSON or CSV to bulk-add questions
+- [ ] 🔔 Webhook on session end — post results to Slack, Discord, or a URL
+
+---
+
+## 👤 About
+
+Built by [SivaSoorya G.R](https://deadtechguy.fun) — ML/DL creator, co-founder of Soluto. Opened this up so anyone can run a quiz without a paywall or a vendor in the way.
+
+→ [deadtechguy.fun](https://deadtechguy.fun) · [GitHub](https://github.com/sivasooryagiri) · 📧 [dtg@soluto.in](mailto:dtg@soluto.in)

@@ -77,7 +77,7 @@ cp .env.example .env
 nano .env
 ```
 
-Fill in your Firebase values and set the join URL to your EC2 public IP:
+Fill in your Firebase values and set the join URL to your EC2 public IP with port 3000:
 
 ```env
 VITE_FIREBASE_API_KEY=your_api_key
@@ -88,7 +88,7 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=000000000000
 VITE_FIREBASE_APP_ID=1:000000000000:web:xxxx
 
 VITE_ADMIN_PASSWORD=your_secure_password
-VITE_JOIN_URL=http://<your-ec2-public-ip>
+VITE_JOIN_URL=http://<your-ec2-public-ip>:3000
 ```
 
 Save: `Ctrl+O`, `Enter`, `Ctrl+X`
@@ -113,17 +113,17 @@ Install `serve`:
 sudo npm install -g serve
 ```
 
-Run it:
+Run it on port 3000 (no root required):
 
 ```bash
-serve -s dist -l 80
+serve -s dist -l 3000
 ```
 
-App is now live at `http://<your-ec2-public-ip>`
+App is now live at `http://<your-ec2-public-ip>:3000`
 
-- **Player join:** `http://<your-ec2-public-ip>`
-- **Admin panel:** `http://<your-ec2-public-ip>/admin`
-- **Host screen:** `http://<your-ec2-public-ip>/host`
+- **Player join:** `http://<your-ec2-public-ip>:3000`
+- **Admin panel:** `http://<your-ec2-public-ip>:3000/admin`
+- **Host screen:** `http://<your-ec2-public-ip>:3000/host`
 
 ---
 
@@ -131,7 +131,7 @@ App is now live at `http://<your-ec2-public-ip>`
 
 ```bash
 sudo npm install -g pm2
-pm2 start "serve -s dist -l 80" --name quiz-live
+pm2 start "serve -s dist -l 3000" --name quiz-live
 pm2 save
 pm2 startup
 ```
@@ -145,18 +145,53 @@ Run the command PM2 prints at the end. App now survives reboots.
 If you have a domain:
 
 1. In your DNS provider, add an **A record** pointing to your EC2 public IP
-2. Update `.env` → `VITE_JOIN_URL=http://yourdomain.com`
+2. Update `.env` → `VITE_JOIN_URL=http://yourdomain.com` (or `https://` if you add SSL below)
 3. Rebuild: `npm run build && pm2 restart quiz-live`
 
 For HTTPS (recommended if using a domain):
 
 ```bash
 sudo apt install -y nginx certbot python3-certbot-nginx
+```
 
-# Set up nginx as a reverse proxy (proxy port 3000 → 80/443)
-# Then run:
+Create an nginx config:
+
+```bash
+sudo nano /etc/nginx/sites-available/quizlive
+```
+
+Paste:
+
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+    }
+}
+```
+
+Enable and restart:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/quizlive /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
 sudo certbot --nginx -d yourdomain.com
 ```
+
+Once nginx handles port 80/443, update `.env`:
+
+```env
+VITE_JOIN_URL=https://yourdomain.com
+```
+
+Rebuild and restart: `npm run build && pm2 restart quiz-live`
 
 ---
 
