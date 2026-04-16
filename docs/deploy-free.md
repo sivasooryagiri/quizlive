@@ -46,14 +46,32 @@ Firebase handles the real-time database, Vercel serves the frontend.
 **Enable Authentication:**
 1. Left sidebar → **Authentication → Get started**
 2. Click **Email/Password** → Enable → Save
-3. Go to **Users → Add user** → use email `admin@quizlive.internal` and a strong password of your choice
-4. Remember that password — you'll type it into the admin login screen (it is never stored in any file)
+3. Go to **Users → Add user**
+4. Email — you **must** use exactly: **`admin@quizlive.internal`**
+5. Password — pick any strong password
+6. Click **Add user**
+
+> ⚠️ **The email is hardcoded in `src/components/admin/LoginScreen.jsx`.** The admin login screen only asks for the password and signs in as `admin@quizlive.internal` behind the scenes. If you create a user with a different email, login will silently fail. (Want a different email? Edit line 16 of that file and re-deploy.)
+>
+> The password is **never** stored in code, env vars, `.env`, or Firestore — it lives only in Firebase Auth's user store.
 
 ---
 
-## Step 2 — Deploy Firestore security rules
+## Step 2 — Deploy Firestore security rules (REQUIRED)
 
-In your project directory:
+The `firestore.rules` file in this repo is what stops players from cheating, reading the answers, or forging scores. **Until you publish it, your database is wide open** (Firestore defaults to test mode = public read/write).
+
+### Easy way — paste into Firebase Console (no CLI needed)
+
+1. Open your repo's `firestore.rules` file → **Copy all** of its contents
+2. In Firebase Console → left sidebar → **Firestore Database**
+3. Click the **Rules** tab at the top
+4. Delete everything in the editor → paste the contents you copied
+5. Click **Publish** → confirm
+
+That's it. Rules are live in ~5 seconds.
+
+### CLI way (optional, for repeated deploys)
 
 ```bash
 npm install -g firebase-tools
@@ -62,7 +80,7 @@ firebase use --add    # select your project
 firebase deploy --only firestore:rules
 ```
 
-This deploys the `firestore.rules` file already in the repo.
+> 🔍 **How to verify rules are live:** open `https://your-project.firebaseapp.com/admin` in incognito → try opening Firestore in DevTools → you should see `permission-denied` errors when poking at `/answerKeys/*`. If everything reads freely, rules are NOT deployed.
 
 ---
 

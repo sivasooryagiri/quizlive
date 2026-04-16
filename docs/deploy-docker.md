@@ -25,8 +25,28 @@ cd quizlive
 
 1. In Firebase console → **Authentication → Get started**
 2. Click **Email/Password** → Enable → Save
-3. Go to **Users → Add user** → use email `admin@quizlive.internal` and a strong password of your choice
-4. Remember that password — you will type it into the admin login screen (never stored in any file)
+3. Go to **Users → Add user**
+4. Email — you **must** use exactly: **`admin@quizlive.internal`**
+5. Password — pick any strong password
+6. Click **Add user**
+
+> ⚠️ The email is hardcoded in `src/components/admin/LoginScreen.jsx`. Login screen only asks for the password and signs in as `admin@quizlive.internal`. **Different email = login fails.** Change line 16 of that file before building if you want a different email.
+>
+> Password is **not** an env var — it lives only in Firebase Auth.
+
+---
+
+## Step 2b — Deploy Firestore security rules (REQUIRED)
+
+The `firestore.rules` file in this repo blocks players from reading the answers, forging scores, or writing arbitrary data. **Without it your DB is wide open** (test mode = public r/w).
+
+**Easy way — paste into Firebase Console:**
+
+1. Open `firestore.rules` in this repo → **Copy all** of its contents
+2. Firebase Console → **Firestore Database** → **Rules** tab
+3. Replace everything → **Publish**
+
+**CLI way:** `npm install -g firebase-tools && firebase login && firebase deploy --only firestore:rules`
 
 ---
 

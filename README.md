@@ -81,6 +81,10 @@ npm run dev
 
 Open `http://localhost:5173`
 
+> ⚠️ **Two manual steps in Firebase Console you must do, or login + security won't work:**
+> 1. **Auth** → add user with email **`admin@quizlive.internal`** (this email is hardcoded — see [LoginScreen.jsx:16](src/components/admin/LoginScreen.jsx)) + your chosen password
+> 2. **Firestore → Rules** tab → paste the contents of [`firestore.rules`](firestore.rules) → Publish
+>
 > Full Firebase setup guide → [docs/deploy-local.md](docs/deploy-local.md)
 
 ---

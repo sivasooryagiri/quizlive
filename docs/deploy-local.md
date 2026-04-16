@@ -36,8 +36,13 @@ npm install
 1. In Firebase console → **Authentication → Get started**
 2. Click **Email/Password** → Enable → Save
 3. Go to **Users → Add user**
-4. Enter any email (e.g. `admin@quiz.local`) and a strong password
-5. These go into your `.env` as `VITE_ADMIN_EMAIL` and `VITE_ADMIN_PASSWORD`
+4. Email — use exactly: **`admin@quizlive.internal`** (this is hardcoded in the app — see note below)
+5. Password — pick any strong password
+6. Click **Add user**
+
+> ⚠️ The email `admin@quizlive.internal` is hardcoded in `src/components/admin/LoginScreen.jsx`. The login screen only asks for the password and signs in as that email. **If you create a user with any other email, login will fail.** Want a different email? Edit line 16 of that file.
+>
+> The password is **not** an env variable — it lives only inside Firebase Auth. Don't set `VITE_ADMIN_PASSWORD` anywhere.
 
 ---
 
@@ -132,9 +137,17 @@ Players on the same network scan the QR or open `http://192.168.1.42:5173` on th
 
 ---
 
-## Firestore security rules
+## Firestore security rules (REQUIRED)
 
-Deploy the rules from the repo to lock down the database:
+The `firestore.rules` file in the repo blocks players from cheating, reading answers, or forging scores. **Until you publish it your DB is wide open** (test mode = public r/w).
+
+### Easy way — paste into Firebase Console (no CLI)
+
+1. Open `firestore.rules` in this repo → **Copy all** of its contents
+2. Firebase Console → **Firestore Database** → **Rules** tab
+3. Replace everything in the editor with what you copied → **Publish**
+
+### CLI way (optional)
 
 ```bash
 npm install -g firebase-tools
