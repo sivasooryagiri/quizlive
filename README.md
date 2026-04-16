@@ -112,16 +112,14 @@ Open `http://localhost:3000`
 
 ## 👥 Capacity
 
-All deployments use Firebase Firestore as the database — capacity depends on your Firebase plan, not where the frontend is hosted.
+**QuizLive itself is $0 — always.** No license, no subscription, no per-player fee. Code is yours, free forever.
 
-| Firebase plan | Concurrent players | Cost |
-|---------------|--------------------|------|
-| Spark (free) | ~80–100 | $0 |
-| Blaze (pay-as-you-go) | 500+ | ~$5–7/month at heavy use |
+The only moving part with a meter on it is **Firebase Firestore** (the real-time database). Google runs Firebase, not QuizLive — so any database cost goes directly to your own Firebase project, not to us.
 
-> The frontend host (Local / Docker / AWS / Vercel) only serves static files — it has no real player limit. The bottleneck is always Firestore reads/writes.
+- ✅ **Firebase free tier (Spark)** handles **~80–100 concurrent players** at $0/month — fits classrooms, small offices, community quizzes, most events.
+- 📈 If you outgrow that (hundreds of players, dozens of sessions/day), you'd switch your Firebase project to the pay-as-you-go plan.
 
-**Need heavy usage?** → See [FIREBASE-COSTS.md](FIREBASE-COSTS.md) for a breakdown of free-tier sessions by player count × number of questions, plus Blaze pricing bands.
+> Heavy usage? Hosting hundreds of players or running this for a big organization? **Read [FIREBASE-COSTS.md](FIREBASE-COSTS.md)** for the full breakdown — free-tier sessions per day by player count × question count, paid pricing bands, and how to set a budget cap so you never get a surprise bill.
 
 ---
 
