@@ -62,6 +62,7 @@ export const initGameState = async () => {
       questionStartTime: null,
       title: 'QuizLive',
       joinUrl: import.meta.env.VITE_JOIN_URL || window.location.origin,
+      showQR: false,
     });
   }
 };

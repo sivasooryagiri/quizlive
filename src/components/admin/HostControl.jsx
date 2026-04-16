@@ -10,10 +10,18 @@ export default function HostControl({ gameState }) {
   const [saved,    setSaved]    = useState(false);
   const [copied,   setCopied]   = useState(false);
 
+  const isQuestioning = gameState?.phase === 'question';
+  const showQR        = gameState?.showQR ?? false;
+
   const copyUrl = () => {
     navigator.clipboard.writeText(joinUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const toggleQR = () => {
+    if (isQuestioning) return;
+    updateGameState({ showQR: !showQR });
   };
 
   const save = async () => {
@@ -43,6 +51,27 @@ export default function HostControl({ gameState }) {
         🖥 Open Host Screen (Projector)
       </motion.button>
       <p className="text-center text-white/30 text-xs">Opens /host in a new tab — show this on the projector</p>
+
+      {/* QR toggle */}
+      <div className={`glass rounded-2xl p-4 flex items-center justify-between
+                       ${isQuestioning ? 'opacity-50' : ''}`}>
+        <div>
+          <p className="text-white text-sm font-semibold">Show QR on presentation</p>
+          <p className="text-white/30 text-xs mt-0.5">
+            {isQuestioning ? 'Disabled during question' : showQR ? 'QR visible on host screen' : 'QR hidden'}
+          </p>
+        </div>
+        <button
+          onClick={toggleQR}
+          disabled={isQuestioning}
+          className={`relative w-12 h-6 rounded-full transition-colors duration-200
+                      ${showQR && !isQuestioning ? 'bg-brand-500' : 'bg-white/20'}
+                      disabled:cursor-not-allowed`}
+        >
+          <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200
+                            ${showQR && !isQuestioning ? 'translate-x-7' : 'translate-x-1'}`} />
+        </button>
+      </div>
 
       {/* Settings */}
       <div className="glass rounded-2xl p-5 space-y-4">
