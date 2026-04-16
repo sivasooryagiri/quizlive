@@ -373,19 +373,20 @@ export const getPlayerRank = (players, playerId) => {
  * Transaction-guarded: only saves once even with multiple host tabs open.
  */
 export const saveSession = async (gameState) => {
+  // Read players outside the transaction — Firestore transactions only
+  // allow tx.get on doc refs, not collection queries. The race window is
+  // harmless: by the time a quiz ends, no new players are joining.
+  const playerSnap = await getDocs(query(playersCol(), orderBy('score', 'desc')));
+  const players = playerSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const ranked = players.map((p) => ({
+    name:  p.name,
+    score: p.score,
+    rank:  players.filter((x) => x.score > p.score).length + 1,
+  }));
+
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(gameRef);
     if (!snap.exists() || snap.data().sessionSaved) return;
-
-    const playerSnap = await getDocs(query(playersCol(), orderBy('score', 'desc')));
-    const players = playerSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-
-    const ranked = players.map((p) => ({
-      name:  p.name,
-      score: p.score,
-      rank:  players.filter((x) => x.score > p.score).length + 1,
-    }));
-
     const sessionRef = doc(sessionsCol());
     tx.set(sessionRef, {
       title:     gameState.title ?? 'QuizLive',
