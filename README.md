@@ -182,4 +182,10 @@ Built by [SivaSoorya G.R](https://deadtechguy.fun) — ML/DL creator, co-founder
 
 ---
 
+## 🤖 Build credits
+
+This release was built with [Claude Code](https://claude.com/claude-code) using **Claude Sonnet 4.6** and **Claude Opus 4.7**.
+
+---
+
 <sub>**Topics:** quiz · trivia · kahoot-alternative · slido-alternative · mentimeter-alternative · open-source-quiz · self-hosted · real-time · multiplayer · classroom · live-polling · audience-response · firebase · react · vite · tailwindcss · free-quiz-app · no-subscription</sub>
