@@ -77,12 +77,12 @@ Open `http://localhost:3000`
 
 ## 🗺️ Pages
 
-| Path | Who | Purpose |
-|------|-----|---------|
-| `/` | Players | Join and answer on their phones |
-| `/host` | Projector | Live question display, timer, leaderboard |
-| `/admin` | You | Questions, game control, history, QR toggle |
-| `/about` | Anyone | About the project and builder |
+| Path | Access | Purpose |
+|------|--------|---------|
+| `/` | Open — no login needed | Join and answer on their phones |
+| `/host` | Open — meant for the projector/big screen | Live question display, timer, leaderboard |
+| `/admin` | Admin password required | Questions, game control, history, QR toggle |
+| `/about` | Open — no login needed | About the project and builder |
 
 ---
 
