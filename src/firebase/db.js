@@ -200,22 +200,40 @@ export const reorderQuestions = async (orderedIds) => {
 };
 
 /**
- * One-shot migration for pre-split question docs that still have the
- * `correctAnswer` field embedded. Moves it to /answerKeys and strips
- * the field from the public question doc. Idempotent — does nothing
- * once all questions are clean. Admin-only (writes to both collections).
+ * Self-healing migration. Runs on admin login. Handles:
+ *   1. Old questions with embedded correctAnswer field — move to /answerKeys, strip field
+ *   2. Any question missing an /answerKeys doc — create one with default 0
+ * Idempotent. Admin-only.
  */
 export const migrateAnswerKeys = async () => {
-  const snap = await getDocs(questionsCol());
-  const dirty = snap.docs.filter((d) => 'correctAnswer' in d.data());
-  if (!dirty.length) return 0;
+  const [qSnap, kSnap] = await Promise.all([
+    getDocs(questionsCol()),
+    getDocs(answerKeysCol()),
+  ]);
+  const existingKeys = new Set(kSnap.docs.map((d) => d.id));
+  const work = [];
+  for (const d of qSnap.docs) {
+    const data = d.data();
+    const hasEmbedded = 'correctAnswer' in data;
+    const hasKeyDoc   = existingKeys.has(d.id);
+    if (hasEmbedded || !hasKeyDoc) {
+      work.push({
+        id:            d.id,
+        correctAnswer: data.correctAnswer ?? 0,
+        stripField:    hasEmbedded,
+      });
+    }
+  }
+  if (!work.length) return 0;
   const batch = writeBatch(db);
-  for (const d of dirty) {
-    batch.set(doc(db, 'answerKeys', d.id), { correctAnswer: d.data().correctAnswer }, { merge: true });
-    batch.update(doc(db, 'questions', d.id), { correctAnswer: deleteField() });
+  for (const w of work) {
+    batch.set(doc(db, 'answerKeys', w.id), { correctAnswer: w.correctAnswer }, { merge: true });
+    if (w.stripField) {
+      batch.update(doc(db, 'questions', w.id), { correctAnswer: deleteField() });
+    }
   }
   await batch.commit();
-  return dirty.length;
+  return work.length;
 };
 
 // ─── Players ──────────────────────────────────────────────────
@@ -273,8 +291,10 @@ export const getPlayer = (id) =>
  * Firestore rules reject (player guessed wrong), we retry with
  * isCorrect=false, score=0. Either way, the server is the source of truth.
  */
-const PERMISSION_DENIED = (e) =>
-  e?.code === 'permission-denied' || e?.code === 'PERMISSION_DENIED';
+const PERMISSION_DENIED = (e) => {
+  const code = e?.code || e?.cause?.code || '';
+  return code === 'permission-denied' || code === 'PERMISSION_DENIED';
+};
 
 const writeAnswerTx = (answerRef, playerRef, payload) =>
   runTransaction(db, async (tx) => {

@@ -53,6 +53,7 @@ export default function AdminPage() {
   const [questions,   setQuestions]   = useState([]);
   const [answerKeys,  setAnswerKeys]  = useState({});
   const [players,     setPlayers]     = useState([]);
+  const [migration,   setMigration]   = useState(null); // {count} | {error}
   const { gameState, loading, error } = useGameState();
   const sessionSaving                 = useRef(false);
   const advanceTimerRef               = useRef(null);
@@ -67,8 +68,10 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!authed) return;
-    // One-shot migration for any pre-split question docs.
-    migrateAnswerKeys().catch(console.error);
+    // Self-healing migration: ensures every question has an answerKey.
+    migrateAnswerKeys()
+      .then((count) => { if (count > 0) setMigration({ count }); })
+      .catch((err) => { setMigration({ error: err.message || String(err) }); });
     const u1 = subscribeToQuestions(setQuestions);
     const u2 = subscribeToPlayers(setPlayers);
     const u3 = subscribeToAnswerKeys(setAnswerKeys);
@@ -168,6 +171,22 @@ export default function AdminPage() {
           </button>
         ))}
       </div>
+
+      {/* Migration banner — surfaces silent backend setup so admin knows it ran */}
+      {migration && (
+        <div className={`px-4 py-2 text-xs text-center font-semibold
+          ${migration.error
+            ? 'bg-red-500/20 text-red-300 border-b border-red-500/40'
+            : 'bg-green-500/20 text-green-300 border-b border-green-500/40'}`}>
+          {migration.error
+            ? `⚠ Migration failed: ${migration.error}. Re-deploy firestore.rules and refresh.`
+            : `✓ Set up ${migration.count} answer key${migration.count !== 1 ? 's' : ''}`}
+          <button
+            onClick={() => setMigration(null)}
+            className="ml-3 text-white/40 hover:text-white"
+          >✕</button>
+        </div>
+      )}
 
       {/* Tab content */}
       <main className="p-4 max-w-2xl mx-auto pb-16">
