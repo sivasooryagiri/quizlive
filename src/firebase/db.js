@@ -156,19 +156,19 @@ export const subscribeToAnswerKey = (qId, cb) =>
 
 export const addQuestion = async (q) => {
   const { correctAnswer = 0, ...publicData } = q;
+  const snap = await getDocs(
+    query(questionsCol(), orderBy('order', 'desc'), limit(1))
+  );
+  const nextOrder = snap.empty ? 0 : snap.docs[0].data().order + 1;
   const newRef = doc(questionsCol());
-  await runTransaction(db, async (tx) => {
-    const snap = await getDocs(
-      query(questionsCol(), orderBy('order', 'desc'), limit(1))
-    );
-    const nextOrder = snap.empty ? 0 : snap.docs[0].data().order + 1;
-    tx.set(newRef, {
-      ...publicData,
-      order: nextOrder,
-      createdAt: serverTimestamp(),
-    });
-    tx.set(doc(db, 'answerKeys', newRef.id), { correctAnswer });
+  const batch = writeBatch(db);
+  batch.set(newRef, {
+    ...publicData,
+    order: nextOrder,
+    createdAt: serverTimestamp(),
   });
+  batch.set(doc(db, 'answerKeys', newRef.id), { correctAnswer });
+  await batch.commit();
   return newRef;
 };
 

@@ -132,6 +132,9 @@ export default function QuestionEditor({ questions }) {
       if (editing === 'new') await addQuestion(q);
       else                   await updateQuestion(editing, q);
       setEditing(null);
+    } catch (err) {
+      console.error('Save question failed:', err);
+      alert(`Couldn't save question: ${err.message ?? err}`);
     } finally { setSaving(false); }
   };
 
@@ -139,6 +142,10 @@ export default function QuestionEditor({ questions }) {
     if (!confirm('Delete this question?')) return;
     setDeleting(id);
     try { await deleteQuestion(id); }
+    catch (err) {
+      console.error('Delete question failed:', err);
+      alert(`Couldn't delete question: ${err.message ?? err}`);
+    }
     finally { setDeleting(null); }
   };
 
