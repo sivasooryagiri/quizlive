@@ -2,13 +2,13 @@
   <img src="public/logo.svg" width="80" alt="QuizLive logo" />
 </p>
 
-# QuizLive — Free Kahoot & Slido Alternative
+# QuizLive — Open Source Real-Time Quiz App
 
-**Free. Open source. Fully yours.**
+**Open source. Self-hosted. No subscriptions.**
 
-QuizLive is a **free, open-source real-time multiplayer quiz app** — a self-hosted alternative to Kahoot, Slido, Mentimeter, and Poll Everywhere. No paywall. No account required to play. No vendor deciding what you can do with it. Run it on a laptop, share it over Wi-Fi, or deploy it to the cloud. Your call.
+QuizLive is an open-source real-time multiplayer quiz app. Run it on your laptop for a classroom, deploy it on a server for a public event, or self-host it however you want. You own the code, you own the data.
 
-> Looking for a **free Kahoot alternative**? A **free Slido alternative**? A **self-hosted quiz platform** for classrooms, events, or team meetups? This is it.
+> Looking for an **open source Kahoot alternative**? A **self-hosted quiz platform** you actually control? This is it.
 
 ![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react&logoColor=white)
 ![Firebase](https://img.shields.io/badge/Firebase-Firestore-ff6f00?style=flat-square&logo=firebase&logoColor=white)
@@ -18,14 +18,15 @@ QuizLive is a **free, open-source real-time multiplayer quiz app** — a self-ho
 
 ---
 
-## 🆚 Why QuizLive over Kahoot / Slido?
+## 🆚 Why QuizLive?
 
 | | QuizLive | Kahoot | Slido |
 |--|---------|--------|-------|
-| Free to use | ✅ Always | ⚠️ Limited free tier | ⚠️ Limited free tier |
+| Open source | ✅ Yes | ❌ No | ❌ No |
 | Self-hostable | ✅ Yes | ❌ No | ❌ No |
+| No monthly subscription | ✅ Yes | ❌ $17+/mo | ❌ $15+/mo |
 | No player accounts | ✅ Yes | ✅ Yes | ✅ Yes |
-| No vendor lock-in | ✅ Open source | ❌ Proprietary | ❌ Proprietary |
+| No vendor lock-in | ✅ Your data | ❌ Their servers | ❌ Their servers |
 | Works on local network | ✅ Offline-capable | ❌ Requires internet | ❌ Requires internet |
 | Unlimited questions | ✅ Yes | ⚠️ Paid plan | ⚠️ Paid plan |
 
@@ -54,10 +55,12 @@ Pick the setup that fits your situation:
 
 | Method | Best for | Cost |
 |--------|----------|------|
-| [🏠 Local + Private Network](docs/deploy-local.md) | Classroom, office, events on same Wi-Fi | Free |
-| [☁️ AWS EC2](docs/deploy-aws.md) | Public quiz, anyone can join from anywhere | Free tier |
-| [🔥 Firebase + Vercel](docs/deploy-free.md) | Easiest cloud setup, 80–100 players | Free |
-| [🐳 Docker](docs/deploy-docker.md) | Self-hosted, clean environment | Free |
+| [🏠 Local + Private Network](docs/deploy-local.md) | Classroom, office, events on same Wi-Fi | $0 — truly free |
+| [☁️ AWS EC2](docs/deploy-aws.md) | Public quiz, full control, your own server | ~$0 free tier |
+| [🔥 Firebase + Vercel](docs/deploy-free.md) | Easiest cloud setup, up to 100 players free | $0 up to 100 players |
+| [🐳 Docker](docs/deploy-docker.md) | Self-hosted, clean environment | $0 |
+
+> **On Firebase costs:** Firebase is the database. Free tier covers up to ~100 simultaneous players. Beyond that, Blaze pay-as-you-go kicks in — roughly $5–7/month for 500 players at 3 sessions/day. You control your own Firebase project and billing. For local or AWS setups, costs depend only on your own server.
 
 ---
 
@@ -107,12 +110,11 @@ Open `http://localhost:3000`
 
 ## 👥 Capacity
 
-| Plan | Concurrent players | Cost |
-|------|--------------------|------|
-| Firebase Spark (free) | 80–100 | $0 |
-| Firebase Blaze (pay-as-you-go) | 500+ | ~$0.01 per session |
-
-Firestore Spark allows 100 simultaneous connections. Reads/writes are well within daily free limits for typical quiz sessions.
+| Setup | Concurrent players | Cost |
+|-------|--------------------|------|
+| Local / Docker / AWS | Unlimited | Your server only |
+| Firebase Spark (free) | ~100 | $0 |
+| Firebase Blaze (pay-as-you-go) | 500+ | ~$5–7/month at heavy use |
 
 ---
 
@@ -120,7 +122,7 @@ Firestore Spark allows 100 simultaneous connections. Reads/writes are well withi
 
 - **Frontend** — React 18, Vite, Tailwind CSS, Framer Motion
 - **Database** — Firebase Firestore (real-time listeners)
-- **Auth** — Password-protected admin (env var), no player accounts
+- **Auth** — Firebase Authentication (admin), no player accounts
 - **Hosting** — Vercel (or self-hosted)
 - **Charts** — Recharts (answer bar chart)
 - **QR** — qrcode.react
@@ -159,7 +161,7 @@ Players type any word during a session. Words appear as floating bubbles on the 
 
 ## 🔍 Use cases
 
-- 🏫 **Teachers** — run classroom quizzes without a Kahoot subscription
+- 🏫 **Teachers** — run classroom quizzes, no Kahoot subscription needed
 - 🏢 **Teams** — replace Slido for internal events and town halls
 - 🎉 **Events** — trivia nights, conferences, community meetups
 - 🖥️ **Self-hosters** — full control, runs on your own hardware
