@@ -63,7 +63,7 @@ The `firestore.rules` file in this repo is what stops players from cheating, rea
 
 ### Easy way — paste into Firebase Console (no CLI needed)
 
-1. Open your repo's `firestore.rules` file → **Copy all** of its contents
+1. Open [`firestore.rules`](../firestore.rules) from this repo → **Copy all** of its contents
 2. In Firebase Console → left sidebar → **Firestore Database**
 3. Click the **Rules** tab at the top
 4. Delete everything in the editor → paste the contents you copied

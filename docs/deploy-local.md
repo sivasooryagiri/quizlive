@@ -60,7 +60,7 @@ The `firestore.rules` file in this repo blocks players from reading the answers,
 
 **Easy way — paste into Firebase Console (no CLI):**
 
-1. Open `firestore.rules` from this repo → **Copy all** of its contents
+1. Open [`firestore.rules`](../firestore.rules) from this repo → **Copy all** of its contents
 2. Firebase Console → left sidebar → **Firestore Database** → **Rules** tab
 3. Replace everything in the editor → **Publish**
 
