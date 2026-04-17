@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { subscribeToPlayerCount } from '../../firebase/db';
+import { EASE_OUT } from '../../lib/motion';
 
 export default function WaitingScreen({ gameState }) {
   const [playerCount, setPlayerCount] = useState(0);
@@ -34,8 +35,9 @@ export default function WaitingScreen({ gameState }) {
       {/* Player count badge */}
       <motion.div
         key={playerCount}
-        initial={{ scale: 1.3, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: EASE_OUT }}
         className="absolute top-8 right-8 glass rounded-2xl px-6 py-3 text-center"
       >
         <p className="text-brand-300 text-sm font-semibold uppercase tracking-wider">Players</p>
@@ -46,8 +48,9 @@ export default function WaitingScreen({ gameState }) {
       <div className="relative z-10 flex flex-col items-center gap-8">
         {/* Title */}
         <motion.div
-          initial={{ opacity: 0, y: -30 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: EASE_OUT }}
           className="text-center"
         >
           <h1 className="text-7xl font-black gradient-text leading-none">{title}</h1>
@@ -56,9 +59,9 @@ export default function WaitingScreen({ gameState }) {
 
         {/* QR Code */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.1 }}
           className="glass-strong rounded-3xl p-6 glow-box"
         >
           <QRCodeSVG

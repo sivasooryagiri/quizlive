@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { subscribeToPlayers } from '../../firebase/db';
 import Particles from '../shared/Particles';
+import { EASE_OUT } from '../../lib/motion';
 
 const MEDAL = ['🥇', '🥈', '🥉'];
 
@@ -21,9 +22,9 @@ export default function EndedPhase() {
       <Particles count={40} />
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.7 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: 'spring', bounce: 0.5 }}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: EASE_OUT }}
         className="relative z-10 text-center"
       >
         <div className="text-8xl mb-4">🏆</div>
@@ -41,9 +42,9 @@ export default function EndedPhase() {
             return (
               <motion.div
                 key={p.id}
-                initial={{ opacity: 0, y: 50 }}
+                initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: vi * 0.2 }}
+                transition={{ duration: 0.4, ease: EASE_OUT, delay: 0.1 + vi * 0.08 }}
                 className={`w-44 ${heights[vi]} glass-strong rounded-t-2xl flex flex-col items-center justify-end pb-5`}
               >
                 {rank === 0 && <span className="absolute -top-10 text-5xl">👑</span>}

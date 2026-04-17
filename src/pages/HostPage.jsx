@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import useGameState from '../hooks/useGameState';
 import { subscribeToQuestions } from '../firebase/db';
+import { pageFade } from '../lib/motion';
 import WaitingScreen    from '../components/host/WaitingScreen';
 import QuestionPhase    from '../components/host/QuestionPhase';
 import ResultsPhase     from '../components/host/ResultsPhase';
@@ -10,13 +11,6 @@ import LeaderboardPhase from '../components/host/LeaderboardPhase';
 import EndedPhase       from '../components/host/EndedPhase';
 import LoadingSpinner   from '../components/shared/LoadingSpinner';
 import ErrorScreen      from '../components/shared/ErrorScreen';
-
-const fade = {
-  initial:    { opacity: 0 },
-  animate:    { opacity: 1 },
-  exit:       { opacity: 0 },
-  transition: { duration: 0.5 },
-};
 
 // HostPage is read-only — pure projector display.
 // Auto-advance lives in AdminPage so meta writes stay admin-authenticated.
@@ -77,13 +71,13 @@ export default function HostPage() {
 
       <AnimatePresence mode="wait">
         {phase === 'waiting' && (
-          <motion.div key="waiting" {...fade} className="min-h-screen">
+          <motion.div key="waiting" {...pageFade} className="min-h-screen">
             <WaitingScreen gameState={gameState} />
           </motion.div>
         )}
 
         {phase === 'question' && currentQ && (
-          <motion.div key={`q-${qIndex}`} {...fade} className="min-h-screen">
+          <motion.div key={`q-${qIndex}`} {...pageFade} className="min-h-screen">
             <QuestionPhase
               question={currentQ}
               gameState={gameState}
@@ -94,7 +88,7 @@ export default function HostPage() {
         )}
 
         {phase === 'results' && currentQ && (
-          <motion.div key={`r-${qIndex}`} {...fade} className="min-h-screen">
+          <motion.div key={`r-${qIndex}`} {...pageFade} className="min-h-screen">
             <ResultsPhase
               question={currentQ}
               questionIndex={qIndex}
@@ -104,7 +98,7 @@ export default function HostPage() {
         )}
 
         {phase === 'leaderboard' && (
-          <motion.div key={`lb-${qIndex}`} {...fade} className="min-h-screen">
+          <motion.div key={`lb-${qIndex}`} {...pageFade} className="min-h-screen">
             <LeaderboardPhase
               gameState={gameState}
               questions={questions}
@@ -113,7 +107,7 @@ export default function HostPage() {
         )}
 
         {phase === 'ended' && (
-          <motion.div key="ended" {...fade} className="min-h-screen">
+          <motion.div key="ended" {...pageFade} className="min-h-screen">
             <EndedPhase />
           </motion.div>
         )}

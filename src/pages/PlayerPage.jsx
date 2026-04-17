@@ -11,13 +11,7 @@ import PlayerLeaderboard from '../components/player/PlayerLeaderboard';
 import EndedScreen       from '../components/player/EndedScreen';
 import LoadingSpinner    from '../components/shared/LoadingSpinner';
 import ErrorScreen       from '../components/shared/ErrorScreen';
-
-const fade = {
-  initial:    { opacity: 0, y: 16 },
-  animate:    { opacity: 1, y: 0 },
-  exit:       { opacity: 0, y: -16 },
-  transition: { duration: 0.3 },
-};
+import { pageFade as fade } from '../lib/motion';
 
 export default function PlayerPage() {
   const { gameState, loading, error: gameError }       = useGameState();
