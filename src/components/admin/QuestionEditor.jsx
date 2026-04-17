@@ -119,10 +119,11 @@ function QuestionForm({ initial = BLANK, onSave, onCancel, saving }) {
 }
 
 export default function QuestionEditor({ questions }) {
-  const [editing,   setEditing]   = useState(null);
-  const [saving,    setSaving]    = useState(false);
-  const [deleting,  setDeleting]  = useState(null);
-  const [dragOver,  setDragOver]  = useState(null);
+  const [editing,    setEditing]    = useState(null);
+  const [saving,     setSaving]     = useState(false);
+  const [deleting,   setDeleting]   = useState(null);
+  const [confirmDel, setConfirmDel] = useState(null);
+  const [dragOver,   setDragOver]   = useState(null);
   const dragIdx = useRef(null);
 
   const handleSave = async (q) => {
@@ -138,14 +139,25 @@ export default function QuestionEditor({ questions }) {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this question?')) return;
-    setDeleting(id);
-    try { await deleteQuestion(id); }
-    catch (err) {
-      console.error('Delete question failed:', err);
-      alert(`Couldn't delete question: ${err.message ?? err}`);
+    // Two-step inline confirm — first click arms, second click fires.
+    // Replaced window.confirm() because some browsers silently suppress
+    // it (no callback, no console), which made "nothing happens on click"
+    // indistinguishable from a real bug.
+    if (confirmDel !== id) {
+      setConfirmDel(id);
+      setTimeout(() => setConfirmDel((cur) => (cur === id ? null : cur)), 4000);
+      return;
     }
-    finally { setDeleting(null); }
+    setConfirmDel(null);
+    setDeleting(id);
+    try {
+      await deleteQuestion(id);
+    } catch (err) {
+      console.error('Delete question failed:', err);
+      alert(`Couldn't delete question: ${err.code || err.message || err}`);
+    } finally {
+      setDeleting(null);
+    }
   };
 
   const onDragStart = (idx) => { dragIdx.current = idx; };
@@ -252,10 +264,13 @@ export default function QuestionEditor({ questions }) {
                   <button
                     onClick={() => handleDelete(q.id)}
                     disabled={deleting === q.id}
-                    className="text-xs text-red-400 hover:text-red-300 transition-colors py-1 px-3
-                               glass rounded-xl border border-red-500/20 hover:border-red-400/40"
+                    className={`text-xs transition-colors py-1 px-3 rounded-xl border
+                      ${confirmDel === q.id
+                        ? 'bg-red-500/25 border-red-400 text-red-200 font-bold'
+                        : 'glass border-red-500/20 text-red-400 hover:text-red-300 hover:border-red-400/40'
+                      }`}
                   >
-                    {deleting === q.id ? '…' : 'Delete'}
+                    {deleting === q.id ? '…' : confirmDel === q.id ? 'Confirm?' : 'Delete'}
                   </button>
                 </div>
               </div>
