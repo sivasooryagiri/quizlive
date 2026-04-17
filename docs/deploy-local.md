@@ -49,12 +49,26 @@ npm install
 ## Step 4 — Set up Firestore
 
 1. In Firebase console → **Firestore Database → Create database**
-2. Choose **Start in test mode** (you can tighten rules later)
+2. Choose **Start in production mode** (rules get replaced in Step 5; test mode = public read/write, skip it)
 3. Pick any region
 
 ---
 
-## Step 5 — Configure environment
+## Step 5 — Deploy Firestore security rules (REQUIRED)
+
+The `firestore.rules` file in this repo blocks players from reading the answers, forging scores, or writing arbitrary data. **Without it, your database is wide open** — and production mode without rules denies everything, so the app won't work either. Publish the rules now.
+
+**Easy way — paste into Firebase Console (no CLI):**
+
+1. Open `firestore.rules` from this repo → **Copy all** of its contents
+2. Firebase Console → left sidebar → **Firestore Database** → **Rules** tab
+3. Replace everything in the editor → **Publish**
+
+**CLI way:** `npm install -g firebase-tools && firebase login && firebase deploy --only firestore:rules`
+
+---
+
+## Step 6 — Configure environment
 
 ```bash
 cp .env.example .env
@@ -75,7 +89,7 @@ VITE_JOIN_URL=http://localhost:5173
 
 ---
 
-## Step 6 — Run the app
+## Step 7 — Run the app
 
 ```bash
 npm run dev
@@ -134,23 +148,3 @@ Restart the dev server. The QR code on the host screen now points to your local 
 Players on the same network scan the QR or open `http://192.168.1.42:5173` on their phones.
 
 > Make sure your firewall allows port 5173. On Linux: `sudo ufw allow 5173`
-
----
-
-## Firestore security rules (REQUIRED)
-
-The `firestore.rules` file in the repo blocks players from cheating, reading answers, or forging scores. **Until you publish it your DB is wide open** (test mode = public r/w).
-
-### Easy way — paste into Firebase Console (no CLI)
-
-1. Open `firestore.rules` in this repo → **Copy all** of its contents
-2. Firebase Console → **Firestore Database** → **Rules** tab
-3. Replace everything in the editor with what you copied → **Publish**
-
-### CLI way (optional)
-
-```bash
-npm install -g firebase-tools
-firebase login
-firebase deploy --only firestore:rules
-```

@@ -40,7 +40,7 @@ Firebase handles the real-time database, Vercel serves the frontend.
 
 **Enable Firestore:**
 1. Left sidebar → **Firestore Database → Create database**
-2. Select **Start in test mode** → Next
+2. Select **Start in production mode** → Next (rules get replaced in Step 2 anyway; test mode = wide open, skip it)
 3. Pick a region close to your users → Done
 
 **Enable Authentication:**

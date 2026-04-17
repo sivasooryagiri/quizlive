@@ -45,11 +45,13 @@ The `firestore.rules` file enforces server-side checks that the client cannot by
 Every write to `/answers` is validated by Firestore rules using cross-document reads. The client cannot lie about:
 - **Phase** — must be `'question'` (rejects submissions before quiz starts or after timer ends).
 - **Answer index** — must be `0..3` (rejects out-of-range writes).
-- **Time taken** — must be within 2s of `request.time - questionStartTime` measured by Firebase's clock (rejects "always 0s" cheats).
+- **Document ID** — must be exactly `{questionId}_{playerId}`, and the `playerId` field inside must match. This pins *who* a write can affect — an attacker can't forge an answer doc under someone else's player ID to bump their score.
 - **isCorrect** — must equal `(submitted answer == answerKey.correctAnswer)`, where `correctAnswer` is read server-side from `/answerKeys/{id}` (rejects flipping `isCorrect: true`).
 - **Score** — must be 0 for wrong, or `5..maxScoreFor(timeTaken, timer)` for correct, where `maxScoreFor` mirrors the client's `calcScore()` exactly. Rejects `score: 99999`.
 
 Because the client can't read `correctAnswer` during the question phase, `submitAnswer()` uses a two-attempt pattern: optimistically write `isCorrect: true` with the max-for-time score; if rules reject, retry with `isCorrect: false, score: 0`. Either way the server is authoritative.
+
+> **Why no client-vs-server clock check?** An earlier rule rejected writes whose `timeTaken` disagreed with `request.time - questionStartTime` by more than 2s. It added friction without preventing the attack (a motivated client can always claim `timeTaken: 0` and get the one-question max of 30 pts), and it false-rejected legit players on flaky cell networks. Dropping it matches Kahoot/Slido behavior. Multi-write score inflation is still capped by the ±30-per-write delta on `/players` (see Known Limitations).
 
 ### CSV export
 Session history CSV exports neutralize Excel formula injection: cells starting with `= + - @` are prefixed with `'` so they render as text instead of executing.
@@ -67,6 +69,9 @@ Firestore rules now cap each `/players/{id}.score` update so the absolute delta 
 **Why a residual remains:** Fully closing this requires Cloud Functions (Firebase Blaze plan, paid) so score writes can be cross-checked against the validated answer documents. The free Spark plan doesn't allow that. The ±30 delta cap is the strongest defense possible with rules alone.
 
 **If you need to close it fully:** Fork and add a Cloud Function on Blaze plan that intercepts player updates and recomputes score from validated `/answers/*` documents.
+
+### The answer-write rule is an oracle
+Because the `isCorrect` check rejects mismatches, a DevTools-savvy player can probe each option during the question phase: write `answer: 0, isCorrect: true`, if rejected try 1, 2, 3 until one succeeds. That reveals the correct answer for the current question only — no earlier/future questions. The cost is that their submission-time shifts later with each probe, lowering their score (the legit max is `maxScoreFor(timeTaken)`, so slow probers earn fewer points than an honest fast player). Closing this fully needs Cloud Functions (Blaze plan) — rules can't hide the correct answer without also refusing to validate legit submissions. For the low-stakes threat model this is an accepted tradeoff; a casual cheater won't find it, and a determined one pays a score penalty for using it.
 
 ### No spam / rate limiting on player joins
 A script can create thousands of player documents. Rules cap name length and require `score: 0` on create, but there's no rate limit. Firebase has its own per-IP write quotas as a backstop.

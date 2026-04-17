@@ -75,9 +75,17 @@ npm -v
 
 ---
 
-## Step 4b — Deploy Firestore security rules (REQUIRED)
+## Step 4b — Create the Firestore database
 
-The `firestore.rules` file in this repo blocks players from reading the answers, forging scores, or writing arbitrary data. **Without it, your Firestore is wide open** (test mode = public read/write).
+1. Firebase Console → left sidebar → **Firestore Database → Create database**
+2. Select **Start in production mode** → Next (rules get replaced in Step 4c; test mode = public r/w, skip it)
+3. Pick a region close to your users → Done
+
+---
+
+## Step 4c — Deploy Firestore security rules (REQUIRED)
+
+The `firestore.rules` file in this repo blocks players from reading the answers, forging scores, or writing arbitrary data. **Without it, your Firestore is wide open** (test mode) — and production mode without rules denies everything, so the app won't work either. Publish the rules now.
 
 **Easy way — paste into Firebase Console (no CLI):**
 
