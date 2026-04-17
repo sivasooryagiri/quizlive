@@ -10,6 +10,7 @@ const BLANK = {
 
 function QuestionForm({ initial = BLANK, onSave, onCancel, saving }) {
   const [q, setQ] = useState({ ...BLANK, ...initial });
+  const optionRefs = useRef([]);
 
   const setOption = (i, val) => {
     const opts = [...q.options];
@@ -23,6 +24,25 @@ function QuestionForm({ initial = BLANK, onSave, onCancel, saving }) {
     q.timer >= 5 &&
     q.timer <= 120;
 
+  // Enter on the question textarea (no Shift) → jump to option A.
+  const handleTextKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      optionRefs.current[0]?.focus();
+    }
+  };
+
+  // Enter on option N → N<3 jump to N+1; N===3 save (if valid).
+  const handleOptionKeyDown = (i) => (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if (i < q.options.length - 1) {
+      optionRefs.current[i + 1]?.focus();
+    } else if (valid && !saving) {
+      onSave(q);
+    }
+  };
+
   return (
     <div className="glass-strong rounded-2xl p-5 space-y-4">
       <div>
@@ -30,8 +50,9 @@ function QuestionForm({ initial = BLANK, onSave, onCancel, saving }) {
         <textarea
           value={q.text}
           onChange={(e) => setQ({ ...q, text: e.target.value })}
+          onKeyDown={handleTextKeyDown}
           rows={2}
-          placeholder="What is the capital of France?"
+          placeholder="What is the capital of France? (Enter → next field, Shift+Enter → new line)"
           className="input resize-none"
         />
       </div>
@@ -48,8 +69,10 @@ function QuestionForm({ initial = BLANK, onSave, onCancel, saving }) {
             <div className="flex gap-2">
               <input
                 type="text"
+                ref={(el) => (optionRefs.current[i] = el)}
                 value={opt}
                 onChange={(e) => setOption(i, e.target.value)}
+                onKeyDown={handleOptionKeyDown(i)}
                 placeholder={`Option ${String.fromCharCode(65 + i)}`}
                 className="input flex-1"
               />
