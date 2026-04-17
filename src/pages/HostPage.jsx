@@ -65,12 +65,12 @@ export default function HostPage() {
           >
             <QRCodeSVG
               value={joinUrl}
-              size={120}
+              size={200}
               bgColor="transparent"
               fgColor="#ffffff"
               level="M"
             />
-            <span className="text-white/40 text-xs">Scan to join</span>
+            <span className="text-white/50 text-sm">Scan to join</span>
           </motion.div>
         )}
       </AnimatePresence>

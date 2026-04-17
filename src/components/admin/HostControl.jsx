@@ -69,12 +69,15 @@ export default function HostControl({ gameState }) {
         <button
           onClick={toggleQR}
           disabled={isQuestioning}
-          className={`relative w-12 h-6 rounded-full transition-colors duration-200
-                      ${showQR && !isQuestioning ? 'bg-brand-500' : 'bg-white/20'}
-                      disabled:cursor-not-allowed`}
+          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full
+                      transition-colors duration-200 disabled:cursor-not-allowed
+                      ${showQR && !isQuestioning ? 'bg-brand-500' : 'bg-white/20'}`}
         >
-          <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200
-                            ${showQR && !isQuestioning ? 'translate-x-7' : 'translate-x-1'}`} />
+          <span
+            className={`inline-block h-5 w-5 rounded-full bg-white shadow
+                        transform transition-transform duration-200
+                        ${showQR && !isQuestioning ? 'translate-x-[22px]' : 'translate-x-[2px]'}`}
+          />
         </button>
       </div>
 
