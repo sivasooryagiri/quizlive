@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { addQuestion, updateQuestion, deleteQuestion, reorderQuestions } from '../../firebase/db';
 
 const BLANK = {
@@ -177,22 +176,13 @@ export default function QuestionEditor({ questions }) {
         </button>
       )}
 
-      <AnimatePresence>
-        {editing === 'new' && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
-          >
-            <QuestionForm
-              onSave={handleSave}
-              onCancel={() => setEditing(null)}
-              saving={saving}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {editing === 'new' && (
+        <QuestionForm
+          onSave={handleSave}
+          onCancel={() => setEditing(null)}
+          saving={saving}
+        />
+      )}
 
       {questions.length === 0 && (
         <p className="text-center text-white/30 py-8">No questions yet. Add one above.</p>
@@ -204,15 +194,14 @@ export default function QuestionEditor({ questions }) {
 
       <div className="space-y-3">
         {questions.map((q, idx) => (
-          <motion.div
+          <div
             key={q.id}
-            layout
             draggable={editing !== q.id}
             onDragStart={() => onDragStart(idx)}
             onDragOver={(e) => onDragOver(e, idx)}
             onDrop={(e) => onDrop(e, idx)}
             onDragEnd={onDragEnd}
-            className={`glass rounded-2xl p-4 transition-all
+            className={`glass rounded-2xl p-4 transition-colors
               ${dragOver === idx ? 'ring-2 ring-brand-400/60 bg-white/5' : ''}`}
           >
             {editing === q.id ? (
@@ -271,7 +260,7 @@ export default function QuestionEditor({ questions }) {
                 </div>
               </div>
             )}
-          </motion.div>
+          </div>
         ))}
       </div>
     </div>
