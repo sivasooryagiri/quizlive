@@ -12,10 +12,6 @@ service cloud.firestore {
     function answerKey(qId) {
       return get(/databases/$(database)/documents/answerKeys/$(qId)).data;
     }
-    // Seconds elapsed since the current question started, per server clock.
-    function serverElapsed() {
-      return duration.value(request.time - game().questionStartTime, 's');
-    }
     // Mirrors calcScore() in src/firebase/db.js. Firestore rules expose
     // math.round/abs/floor/ceil/pow/sqrt but NOT math.max or math.min —
     // using them makes every rule evaluation error out and deny. Cap via
@@ -28,9 +24,15 @@ service cloud.firestore {
     // Validates an answer write against authoritative server state:
     //   - phase must be 'question'
     //   - answer must be a valid option index (0..3)
-    //   - timeTaken must be within 2s of server-measured elapsed
     //   - isCorrect must match the actual correctAnswer (read from answerKeys)
     //   - score must be 0 for wrong; 5..maxScoreFor(timeTaken, timer) for correct
+    //
+    // No client-vs-server-clock check. A malicious client can always claim
+    // timeTaken=0 and get the max score for one question (30 pts), so the
+    // check added friction without preventing the attack. Every legit
+    // submit is now accepted regardless of phone clock drift or cell
+    // latency, matching Kahoot/Slido's behavior. Multi-write inflation is
+    // still blocked by the 30-pt delta cap on /players updates.
     function answerIsValid(d) {
       return d.questionId is string
           && d.answer is int
@@ -42,7 +44,6 @@ service cloud.firestore {
           && d.score <= 30
           && d.isCorrect is bool
           && game().phase == 'question'
-          && d.timeTaken >= serverElapsed() - 2
           && d.isCorrect == (d.answer == answerKey(d.questionId).correctAnswer)
           && (
                (d.isCorrect == false && d.score == 0)
