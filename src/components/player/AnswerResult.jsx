@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { subscribeToPlayerAnswer, subscribeToAnswerKey } from '../../firebase/db';
+import { subscribeToPlayerAnswer, subscribeToAnswerKey, calcScore } from '../../firebase/db';
 
 export default function AnswerResult({ question, playerId }) {
   const [result,    setResult]    = useState(null);
@@ -41,10 +41,10 @@ export default function AnswerResult({ question, playerId }) {
   }
 
   const didAnswer  = result !== null;
-  const isCorrect  = result?.isCorrect ?? false;
-  const score      = result?.score ?? 0;
   const chosen     = result?.answer ?? null;
   const correct    = answerKey;
+  const isCorrect  = didAnswer && correct !== null ? chosen === correct : false;
+  const score      = isCorrect ? calcScore(true, result.timeTaken, result.timer ?? question.timer ?? 15) : 0;
   const LABELS     = ['A', 'B', 'C', 'D'];
 
   return (

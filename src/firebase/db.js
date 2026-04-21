@@ -267,15 +267,21 @@ export const joinGame = async (rawName) => {
   return ref.id;
 };
 
-// Aggregates scores live from /answers so direct player doc writes have no effect.
+// Aggregates scores live from /answers + /answerKeys.
+// During the question phase answerKeys are unreadable — keyMap stays empty
+// and scores show as 0 (leaderboard isn't visible during question phase).
+// Once phase changes to results/leaderboard the listener fires and scores populate.
 export const subscribeToPlayers = (cb) => {
   let players = [];
   let answers = [];
+  let keyMap  = {};
 
   const merge = () => {
     const scoreMap = {};
-    answers.forEach(({ playerId, score }) => {
-      scoreMap[playerId] = (scoreMap[playerId] || 0) + (score || 0);
+    answers.forEach(({ playerId, questionId, answer, timeTaken, timer = 15 }) => {
+      if (!(questionId in keyMap)) return;
+      const isCorrect = answer === keyMap[questionId];
+      scoreMap[playerId] = (scoreMap[playerId] || 0) + calcScore(isCorrect, timeTaken, timer);
     });
     cb(
       players
@@ -292,8 +298,13 @@ export const subscribeToPlayers = (cb) => {
     answers = snap.docs.map((d) => d.data());
     merge();
   });
+  const unsubKeys = onSnapshot(answerKeysCol(), (snap) => {
+    keyMap = {};
+    snap.docs.forEach((d) => { keyMap[d.id] = d.data().correctAnswer; });
+    merge();
+  }, () => {}); // permission denied during question phase — silently ignored
 
-  return () => { unsubPlayers(); unsubAnswers(); };
+  return () => { unsubPlayers(); unsubAnswers(); unsubKeys(); };
 };
 
 export const subscribeToPlayerCount = (cb) =>
@@ -314,14 +325,10 @@ export const getPlayer = (id) =>
  * Firestore rules reject (player guessed wrong), we retry with
  * isCorrect=false, score=0. Either way, the server is the source of truth.
  */
-const PERMISSION_DENIED = (e) => {
-  const code = e?.code || e?.cause?.code || '';
-  return code === 'permission-denied' || code === 'PERMISSION_DENIED';
-};
-
-// Scores are computed from /answers — player docs are never updated.
-// Two-attempt pattern: submit isCorrect=true optimistically; rules reject
-// if the answer is wrong, then retry with isCorrect=false, score=0.
+// Blind write — no isCorrect or score fields. The rule forbids both so the
+// rule can never act as an oracle (old two-attempt pattern let DevTools
+// attackers probe the correct answer by watching which write was rejected).
+// Correctness and score are computed at read time from /answerKeys.
 export const submitAnswer = async ({
   questionId,
   playerId,
@@ -330,24 +337,10 @@ export const submitAnswer = async ({
   timer = 15,
 }) => {
   const answerRef = doc(db, 'answers', `${questionId}_${playerId}`);
-  const optimisticScore = calcScore(true, timeTaken, timer);
-
-  try {
-    await setDoc(answerRef, {
-      questionId, playerId, answer, timeTaken,
-      score: optimisticScore, isCorrect: true,
-      timestamp: serverTimestamp(),
-    });
-    return optimisticScore;
-  } catch (e) {
-    if (!PERMISSION_DENIED(e)) throw e;
-    await setDoc(answerRef, {
-      questionId, playerId, answer, timeTaken,
-      score: 0, isCorrect: false,
-      timestamp: serverTimestamp(),
-    });
-    return 0;
-  }
+  await setDoc(answerRef, {
+    questionId, playerId, answer, timeTaken, timer,
+    timestamp: serverTimestamp(),
+  });
 };
 
 export const getPlayerAnswer = (questionId, playerId) =>
@@ -383,14 +376,19 @@ export const getPlayerRank = (players, playerId) => {
  * Transaction-guarded: only saves once even with multiple host tabs open.
  */
 export const saveSession = async (gameState) => {
-  const [playerSnap, answerSnap] = await Promise.all([
+  const [playerSnap, answerSnap, keySnap] = await Promise.all([
     getDocs(playersCol()),
     getDocs(answersCol()),
+    getDocs(answerKeysCol()),
   ]);
+  const keyMap = {};
+  keySnap.docs.forEach((d) => { keyMap[d.id] = d.data().correctAnswer; });
   const scoreMap = {};
   answerSnap.docs.forEach((d) => {
-    const { playerId, score } = d.data();
-    scoreMap[playerId] = (scoreMap[playerId] || 0) + (score || 0);
+    const { playerId, questionId, answer, timeTaken, timer = 15 } = d.data();
+    if (!(questionId in keyMap)) return;
+    const isCorrect = answer === keyMap[questionId];
+    scoreMap[playerId] = (scoreMap[playerId] || 0) + calcScore(isCorrect, timeTaken, timer);
   });
   const players = playerSnap.docs
     .map((d) => ({ id: d.id, ...d.data(), score: scoreMap[d.id] || 0 }))
