@@ -26,11 +26,15 @@ QuizLive is a free, open-source, real-time multiplayer quiz and trivia platform 
 |--|---------|--------|-------|
 | Open source | ✅ Yes | ❌ No | ❌ No |
 | Self-hostable | ✅ Yes | ❌ No | ❌ No |
-| No monthly subscription | ✅ Yes | ❌ $17+/mo | ❌ $15+/mo |
+| No monthly subscription | ✅ Free up to ~100 players¹ | ❌ $17+/mo | ❌ $15+/mo |
 | No player accounts | ✅ Yes | ✅ Yes | ✅ Yes |
 | No vendor lock-in | ✅ Your data | ❌ Their servers | ❌ Their servers |
+| Database cost at scale | ⚠️ Firebase pay-as-you-go² | Included | Included |
 | Works on local network | ✅ Offline-capable | ❌ Requires internet | ❌ Requires internet |
 | Unlimited questions | ✅ Yes | ⚠️ Paid plan | ⚠️ Paid plan |
+
+<sub>¹ Firebase free tier (Spark) covers ~80–100 concurrent players at $0/month. Larger events need the pay-as-you-go plan — see [FIREBASE-COSTS.md](FIREBASE-COSTS.md).</sub>
+<sub>² Firebase Firestore is billed per read/write at scale. QuizLive itself will always be free; the database cost is yours, going directly to your own Firebase project.</sub>
 
 ---
 
