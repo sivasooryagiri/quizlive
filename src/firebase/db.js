@@ -268,13 +268,17 @@ export const joinGame = async (rawName) => {
 };
 
 // Aggregates scores live from /answers + /answerKeys.
-// During the question phase answerKeys are unreadable — keyMap stays empty
-// and scores show as 0 (leaderboard isn't visible during question phase).
-// Once phase changes to results/leaderboard the listener fires and scores populate.
+// Firestore listeners are permanently killed after permission-denied — they do
+// NOT auto-recover when rules change. answerKeys are locked during question
+// phase, so the first subscription always dies. We retry every 3s until the
+// phase changes to results/leaderboard and the read is allowed.
 export const subscribeToPlayers = (cb) => {
   let players = [];
   let answers = [];
   let keyMap  = {};
+  let unsubKeys   = null;
+  let retryTimer  = null;
+  let destroyed   = false;
 
   const merge = () => {
     const scoreMap = {};
@@ -290,6 +294,22 @@ export const subscribeToPlayers = (cb) => {
     );
   };
 
+  const startKeyListener = () => {
+    unsubKeys = onSnapshot(
+      answerKeysCol(),
+      (snap) => {
+        keyMap = {};
+        snap.docs.forEach((d) => { keyMap[d.id] = d.data().correctAnswer; });
+        merge();
+      },
+      () => {
+        // permission denied (question phase) — retry after 3s
+        unsubKeys = null;
+        if (!destroyed) retryTimer = setTimeout(startKeyListener, 3000);
+      }
+    );
+  };
+
   const unsubPlayers = onSnapshot(playersCol(), (snap) => {
     players = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     merge();
@@ -298,13 +318,16 @@ export const subscribeToPlayers = (cb) => {
     answers = snap.docs.map((d) => d.data());
     merge();
   });
-  const unsubKeys = onSnapshot(answerKeysCol(), (snap) => {
-    keyMap = {};
-    snap.docs.forEach((d) => { keyMap[d.id] = d.data().correctAnswer; });
-    merge();
-  }, () => {}); // permission denied during question phase — silently ignored
 
-  return () => { unsubPlayers(); unsubAnswers(); unsubKeys(); };
+  startKeyListener();
+
+  return () => {
+    destroyed = true;
+    clearTimeout(retryTimer);
+    unsubPlayers();
+    unsubAnswers();
+    if (unsubKeys) unsubKeys();
+  };
 };
 
 export const subscribeToPlayerCount = (cb) =>
