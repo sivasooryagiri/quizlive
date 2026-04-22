@@ -4,6 +4,8 @@
 
 # QuizLive — Open Source Real-Time Quiz App (Kahoot / Slido / Mentimeter Alternative)
 
+[![⚡ Quick Install — Free](https://img.shields.io/badge/⚡_Quick_Install-Free-brightgreen?style=for-the-badge)](docs/deploy-free.md)
+
 **Open source. Self-hosted. No subscriptions. No player accounts. Unlimited questions.**
 
 QuizLive is a free, open-source, real-time multiplayer quiz and trivia platform built with React and Firebase. Run it on your laptop for a classroom, deploy it on a server for a public event, or self-host it however you want. You own the code, you own the data, you keep the players.
